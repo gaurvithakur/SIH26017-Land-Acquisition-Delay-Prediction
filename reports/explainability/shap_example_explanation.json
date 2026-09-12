@@ -1,0 +1,56 @@
+{
+  "case_id": "AH101254",
+  "actual_delay_days": 86.0,
+  "predicted_delay_days": 84.98842439516008,
+  "baseline_prediction_days": 89.15006903710983,
+  "top_factors": [
+    {
+      "feature": "days_in_current_stage",
+      "feature_value": "38.0",
+      "shap_contribution_days": -15.751938948688297,
+      "absolute_contribution_days": 15.751938948688297
+    },
+    {
+      "feature": "pending_approvals",
+      "feature_value": "3.0",
+      "shap_contribution_days": 11.242318007709345,
+      "absolute_contribution_days": 11.242318007709345
+    },
+    {
+      "feature": "number_of_objections",
+      "feature_value": "1.0",
+      "shap_contribution_days": 2.8030662070631265,
+      "absolute_contribution_days": 2.8030662070631265
+    },
+    {
+      "feature": "land_area_acres",
+      "feature_value": "13.48",
+      "shap_contribution_days": -1.456479808089473,
+      "absolute_contribution_days": 1.456479808089473
+    },
+    {
+      "feature": "acquisition_stage",
+      "feature_value": "Compensation",
+      "shap_contribution_days": 1.2846239329925857,
+      "absolute_contribution_days": 1.2846239329925857
+    },
+    {
+      "feature": "number_of_landowners",
+      "feature_value": "4.0",
+      "shap_contribution_days": -1.0404003330521474,
+      "absolute_contribution_days": 1.0404003330521474
+    },
+    {
+      "feature": "number_of_court_cases",
+      "feature_value": "0.0",
+      "shap_contribution_days": -0.7796502350378628,
+      "absolute_contribution_days": 0.7796502350378628
+    },
+    {
+      "feature": "state",
+      "feature_value": "Uttarakhand",
+      "shap_contribution_days": -0.6903123799020005,
+      "absolute_contribution_days": 0.6903123799020005
+    }
+  ]
+}
