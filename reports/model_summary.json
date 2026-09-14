@@ -1,0 +1,16 @@
+{
+  "dataset_rows": 14997,
+  "training_rows": 11997,
+  "testing_rows": 3000,
+  "input_features": 22,
+  "random_state": 42,
+  "best_model": "Linear Regression",
+  "best_test_metrics": {
+    "MAE_days": 9.778412955545837,
+    "RMSE_days": 12.342220763217849,
+    "R2": 0.8595368900326879,
+    "Median_AE_days": 8.313989963170936,
+    "MAPE_nonzero_pct": 15.508741488928734
+  },
+  "synthetic_data_warning": "Metrics demonstrate prototype performance on synthetic data and do not establish performance on real government cases."
+}

@@ -1,0 +1,107 @@
+{
+  "explained_model": "LinearRegression",
+  "background_rows": 500,
+  "explained_test_rows": 1000,
+  "transformed_features": 91,
+  "maximum_additivity_error_days": 5.684341886080802e-14,
+  "global_top_features": [
+    {
+      "feature": "days_in_current_stage",
+      "mean_absolute_shap_days": 16.492025480122873
+    },
+    {
+      "feature": "acquisition_stage",
+      "mean_absolute_shap_days": 11.780699828121485
+    },
+    {
+      "feature": "pending_approvals",
+      "mean_absolute_shap_days": 7.216464620531463
+    },
+    {
+      "feature": "number_of_objections",
+      "mean_absolute_shap_days": 4.896109225118543
+    },
+    {
+      "feature": "land_area_acres",
+      "mean_absolute_shap_days": 4.84058097868836
+    },
+    {
+      "feature": "project_type",
+      "mean_absolute_shap_days": 3.5794438453816033
+    },
+    {
+      "feature": "district",
+      "mean_absolute_shap_days": 3.517666333879476
+    },
+    {
+      "feature": "state",
+      "mean_absolute_shap_days": 2.3326421056633864
+    },
+    {
+      "feature": "number_of_court_cases",
+      "mean_absolute_shap_days": 2.32914938787311
+    },
+    {
+      "feature": "number_of_landowners",
+      "mean_absolute_shap_days": 1.5391765158246855
+    }
+  ],
+  "example": {
+    "case_id": "AH101254",
+    "actual_delay_days": 86.0,
+    "predicted_delay_days": 84.98842439516008,
+    "baseline_prediction_days": 89.15006903710983,
+    "top_factors": [
+      {
+        "feature": "days_in_current_stage",
+        "feature_value": "38.0",
+        "shap_contribution_days": -15.751938948688297,
+        "absolute_contribution_days": 15.751938948688297
+      },
+      {
+        "feature": "pending_approvals",
+        "feature_value": "3.0",
+        "shap_contribution_days": 11.242318007709345,
+        "absolute_contribution_days": 11.242318007709345
+      },
+      {
+        "feature": "number_of_objections",
+        "feature_value": "1.0",
+        "shap_contribution_days": 2.8030662070631265,
+        "absolute_contribution_days": 2.8030662070631265
+      },
+      {
+        "feature": "land_area_acres",
+        "feature_value": "13.48",
+        "shap_contribution_days": -1.456479808089473,
+        "absolute_contribution_days": 1.456479808089473
+      },
+      {
+        "feature": "acquisition_stage",
+        "feature_value": "Compensation",
+        "shap_contribution_days": 1.2846239329925857,
+        "absolute_contribution_days": 1.2846239329925857
+      },
+      {
+        "feature": "number_of_landowners",
+        "feature_value": "4.0",
+        "shap_contribution_days": -1.0404003330521474,
+        "absolute_contribution_days": 1.0404003330521474
+      },
+      {
+        "feature": "number_of_court_cases",
+        "feature_value": "0.0",
+        "shap_contribution_days": -0.7796502350378628,
+        "absolute_contribution_days": 0.7796502350378628
+      },
+      {
+        "feature": "state",
+        "feature_value": "Uttarakhand",
+        "shap_contribution_days": -0.6903123799020005,
+        "absolute_contribution_days": 0.6903123799020005
+      }
+    ]
+  },
+  "interpretation": "Positive SHAP values increase predicted delay relative to the baseline; negative values decrease it.",
+  "synthetic_data_warning": "Explanations describe a model trained on synthetic prototype data and must not be presented as verified government evidence."
+}
