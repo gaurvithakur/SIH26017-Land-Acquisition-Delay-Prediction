@@ -8,7 +8,6 @@ import {
   CCardBody,
   CCardHeader,
   CCol,
-  CProgress,
   CRow,
   CTable,
   CTableBody,
@@ -24,13 +23,22 @@ const HighRiskCases = () => {
   // Get all cases from Redux
   const cases = useSelector((state) => state.cases)
 
-  // Get only High Risk cases
-  const highRiskCases = cases
+  // Show cases with predicted delay of 120 days or more.
+  // This is a UI filter, not a model-generated risk score.
+  const highDelayCases = cases
     .map((item, index) => ({
       ...item,
       originalIndex: index,
     }))
-    .filter((item) => item.risk === 'High')
+    .filter(
+      (item) =>
+        item.predictedDelayDays !== undefined &&
+        Number(item.predictedDelayDays) >= 120,
+    )
+    .sort(
+      (a, b) =>
+        Number(b.predictedDelayDays) - Number(a.predictedDelayDays),
+    )
 
   return (
     <CRow>
@@ -38,25 +46,31 @@ const HighRiskCases = () => {
         <CCard className="shadow-sm">
           <CCardHeader className="d-flex justify-content-between align-items-center">
             <div>
-              <strong>🔴 High Risk Cases</strong>
+              <strong>🔴 High Delay Cases</strong>
               <div className="small text-body-secondary mt-1">
-                Cases that require immediate attention
+                Cases with predicted delay of 120 days or more
               </div>
             </div>
 
-            <span className="badge bg-danger fs-6">{highRiskCases.length} Cases</span>
+            <span className="badge bg-danger fs-6">
+              {highDelayCases.length} Cases
+            </span>
           </CCardHeader>
 
           <CCardBody>
-            {highRiskCases.length === 0 ? (
+            {highDelayCases.length === 0 ? (
               <div className="text-center py-5">
-                <h5>🎉 No High Risk Cases Found</h5>
+                <h5>🎉 No High Delay Cases Found</h5>
 
                 <p className="text-body-secondary">
-                  Currently, there are no land acquisition cases with high delay risk.
+                  No saved cases currently have a predicted delay of 120 days
+                  or more.
                 </p>
 
-                <CButton color="primary" onClick={() => navigate('/add-case')}>
+                <CButton
+                  color="primary"
+                  onClick={() => navigate('/add-case')}
+                >
                   ➕ Add New Case
                 </CButton>
               </div>
@@ -68,15 +82,18 @@ const HighRiskCases = () => {
                     <CTableHeaderCell>State</CTableHeaderCell>
                     <CTableHeaderCell>District</CTableHeaderCell>
                     <CTableHeaderCell>Project Type</CTableHeaderCell>
-                    <CTableHeaderCell>Risk Score</CTableHeaderCell>
-                    <CTableHeaderCell>Expected Delay</CTableHeaderCell>
-                    <CTableHeaderCell className="text-center">Actions</CTableHeaderCell>
+                    <CTableHeaderCell>Predicted Delay</CTableHeaderCell>
+                    <CTableHeaderCell className="text-center">
+                      Actions
+                    </CTableHeaderCell>
                   </CTableRow>
                 </CTableHead>
 
                 <CTableBody>
-                  {highRiskCases.map((item) => (
-                    <CTableRow key={`${item.caseId}-${item.originalIndex}`}>
+                  {highDelayCases.map((item) => (
+                    <CTableRow
+                      key={`${item.caseId}-${item.originalIndex}`}
+                    >
                       <CTableDataCell>
                         <strong>{item.caseId}</strong>
                       </CTableDataCell>
@@ -87,20 +104,22 @@ const HighRiskCases = () => {
 
                       <CTableDataCell>{item.projectType}</CTableDataCell>
 
-                      <CTableDataCell style={{ minWidth: '120px' }}>
-                        <CProgress color="danger" value={item.score} />
-
-                        <small className="text-danger fw-semibold">{item.score}%</small>
+                      <CTableDataCell>
+                        <span className="badge bg-danger fs-6">
+                          {item.predictedDelayDays} days
+                        </span>
                       </CTableDataCell>
-
-                      <CTableDataCell>{item.delay}</CTableDataCell>
 
                       <CTableDataCell className="text-center">
                         <div className="d-flex gap-2 justify-content-center">
                           <CButton
                             color="info"
                             size="sm"
-                            onClick={() => navigate(`/view-case/${item.originalIndex}`)}
+                            onClick={() =>
+                              navigate(
+                                `/view-case/${item.originalIndex}`,
+                              )
+                            }
                           >
                             👁️ View
                           </CButton>
@@ -108,7 +127,11 @@ const HighRiskCases = () => {
                           <CButton
                             color="primary"
                             size="sm"
-                            onClick={() => navigate(`/edit-case/${item.originalIndex}`)}
+                            onClick={() =>
+                              navigate(
+                                `/edit-case/${item.originalIndex}`,
+                              )
+                            }
                           >
                             ✏️ Edit
                           </CButton>

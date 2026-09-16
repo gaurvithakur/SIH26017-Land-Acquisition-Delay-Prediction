@@ -9,7 +9,6 @@ import {
   CCardHeader,
   CCol,
   CFormInput,
-  CFormSelect,
   CRow,
   CTable,
   CTableBody,
@@ -26,30 +25,19 @@ const AllCases = () => {
   // Get all cases from Redux
   const cases = useSelector((state) => state.cases)
 
-  // Search and filter states
+  // Search state
   const [search, setSearch] = useState('')
-  const [riskFilter, setRiskFilter] = useState('All')
-
-  // Risk badge color
-  const getRiskColor = (risk) => {
-    if (risk === 'High') return 'danger'
-    if (risk === 'Medium') return 'warning'
-    return 'success'
-  }
 
   // Filter cases
   const filteredCases = cases.filter((item) => {
     const searchText = search.toLowerCase()
 
-    const matchesSearch =
+    return (
       item.caseId?.toLowerCase().includes(searchText) ||
       item.state?.toLowerCase().includes(searchText) ||
       item.district?.toLowerCase().includes(searchText) ||
       item.projectType?.toLowerCase().includes(searchText)
-
-    const matchesRisk = riskFilter === 'All' || item.risk === riskFilter
-
-    return matchesSearch && matchesRisk
+    )
   })
 
   // Delete case
@@ -72,35 +60,20 @@ const AllCases = () => {
           <h2 className="fw-bold">All Land Acquisition Cases</h2>
 
           <p className="text-body-secondary">
-            View, search, filter and manage all LANDPREDICT cases.
+            View, search and manage all LANDPREDICT cases.
           </p>
         </CCol>
       </CRow>
 
-      {/* Search and Filter */}
+      {/* Search */}
       <CCard className="mb-4 shadow-sm">
         <CCardBody>
-          <CRow>
-            {/* Search */}
-            <CCol md={8} className="mb-3 mb-md-0">
-              <CFormInput
-                type="text"
-                placeholder="🔍 Search by Case ID, State, District or Project Type..."
-                value={search}
-                onChange={(e) => setSearch(e.target.value)}
-              />
-            </CCol>
-
-            {/* Risk Filter */}
-            <CCol md={4}>
-              <CFormSelect value={riskFilter} onChange={(e) => setRiskFilter(e.target.value)}>
-                <option value="All">All Risk Levels</option>
-                <option value="High">🔴 High Risk</option>
-                <option value="Medium">🟡 Medium Risk</option>
-                <option value="Low">🟢 Low Risk</option>
-              </CFormSelect>
-            </CCol>
-          </CRow>
+          <CFormInput
+            type="text"
+            placeholder="🔍 Search by Case ID, State, District or Project Type..."
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+          />
         </CCardBody>
       </CCard>
 
@@ -133,16 +106,15 @@ const AllCases = () => {
                 <div className="text-center py-5">
                   <h5>No matching cases found.</h5>
 
-                  <p className="text-body-secondary">Try changing your search or risk filter.</p>
+                  <p className="text-body-secondary">
+                    Try changing your search.
+                  </p>
 
                   <CButton
                     color="secondary"
-                    onClick={() => {
-                      setSearch('')
-                      setRiskFilter('All')
-                    }}
+                    onClick={() => setSearch('')}
                   >
-                    Clear Filters
+                    Clear Search
                   </CButton>
                 </div>
               ) : (
@@ -153,16 +125,15 @@ const AllCases = () => {
                       <CTableHeaderCell>State</CTableHeaderCell>
                       <CTableHeaderCell>District</CTableHeaderCell>
                       <CTableHeaderCell>Project Type</CTableHeaderCell>
-                      <CTableHeaderCell>Risk</CTableHeaderCell>
-                      <CTableHeaderCell>Score</CTableHeaderCell>
-                      <CTableHeaderCell>Expected Delay</CTableHeaderCell>
-                      <CTableHeaderCell className="text-center">Actions</CTableHeaderCell>
+                      <CTableHeaderCell>Predicted Delay</CTableHeaderCell>
+                      <CTableHeaderCell className="text-center">
+                        Actions
+                      </CTableHeaderCell>
                     </CTableRow>
                   </CTableHead>
 
                   <CTableBody>
                     {filteredCases.map((item) => {
-                      // IMPORTANT:
                       // Find original index because filtered list index
                       // may be different from Redux array index
                       const originalIndex = cases.indexOf(item)
@@ -173,21 +144,24 @@ const AllCases = () => {
                             <strong>{item.caseId}</strong>
                           </CTableDataCell>
 
-                          <CTableDataCell>{item.state}</CTableDataCell>
-
-                          <CTableDataCell>{item.district}</CTableDataCell>
-
-                          <CTableDataCell>{item.projectType}</CTableDataCell>
-
                           <CTableDataCell>
-                            <span className={`badge bg-${getRiskColor(item.risk)}`}>
-                              {item.risk}
-                            </span>
+                            {item.state}
                           </CTableDataCell>
 
-                          <CTableDataCell>{item.score}%</CTableDataCell>
+                          <CTableDataCell>
+                            {item.district}
+                          </CTableDataCell>
 
-                          <CTableDataCell>{item.delay}</CTableDataCell>
+                          <CTableDataCell>
+                            {item.projectType}
+                          </CTableDataCell>
+
+                          <CTableDataCell>
+                            {item.predictedDelayDays !== undefined &&
+                            item.predictedDelayDays !== null
+                              ? `${item.predictedDelayDays} days`
+                              : 'Not predicted'}
+                          </CTableDataCell>
 
                           {/* Action Buttons */}
                           <CTableDataCell className="text-center">
@@ -196,7 +170,9 @@ const AllCases = () => {
                               <CButton
                                 color="info"
                                 size="sm"
-                                onClick={() => navigate(`/view-case/${originalIndex}`)}
+                                onClick={() =>
+                                  navigate(`/view-case/${originalIndex}`)
+                                }
                               >
                                 👁️ View
                               </CButton>
@@ -205,7 +181,9 @@ const AllCases = () => {
                               <CButton
                                 color="primary"
                                 size="sm"
-                                onClick={() => navigate(`/edit-case/${originalIndex}`)}
+                                onClick={() =>
+                                  navigate(`/edit-case/${originalIndex}`)
+                                }
                               >
                                 ✏️ Edit
                               </CButton>
@@ -214,7 +192,9 @@ const AllCases = () => {
                               <CButton
                                 color="danger"
                                 size="sm"
-                                onClick={() => handleDelete(originalIndex, item.caseId)}
+                                onClick={() =>
+                                  handleDelete(originalIndex, item.caseId)
+                                }
                               >
                                 🗑️
                               </CButton>
@@ -235,3 +215,4 @@ const AllCases = () => {
 }
 
 export default AllCases
+
