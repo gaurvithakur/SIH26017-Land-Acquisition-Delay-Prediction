@@ -31,14 +31,9 @@ const HighRiskCases = () => {
       originalIndex: index,
     }))
     .filter(
-      (item) =>
-        item.predictedDelayDays !== undefined &&
-        Number(item.predictedDelayDays) >= 120,
+      (item) => item.predictedDelayDays !== undefined && Number(item.predictedDelayDays) >= 120,
     )
-    .sort(
-      (a, b) =>
-        Number(b.predictedDelayDays) - Number(a.predictedDelayDays),
-    )
+    .sort((a, b) => Number(b.predictedDelayDays) - Number(a.predictedDelayDays))
 
   return (
     <CRow>
@@ -52,9 +47,7 @@ const HighRiskCases = () => {
               </div>
             </div>
 
-            <span className="badge bg-danger fs-6">
-              {highDelayCases.length} Cases
-            </span>
+            <span className="badge bg-danger fs-6">{highDelayCases.length} Cases</span>
           </CCardHeader>
 
           <CCardBody>
@@ -63,14 +56,10 @@ const HighRiskCases = () => {
                 <h5>🎉 No High Delay Cases Found</h5>
 
                 <p className="text-body-secondary">
-                  No saved cases currently have a predicted delay of 120 days
-                  or more.
+                  No saved cases currently have a predicted delay of 120 days or more.
                 </p>
 
-                <CButton
-                  color="primary"
-                  onClick={() => navigate('/add-case')}
-                >
+                <CButton color="primary" onClick={() => navigate('/add-case')}>
                   ➕ Add New Case
                 </CButton>
               </div>
@@ -83,17 +72,13 @@ const HighRiskCases = () => {
                     <CTableHeaderCell>District</CTableHeaderCell>
                     <CTableHeaderCell>Project Type</CTableHeaderCell>
                     <CTableHeaderCell>Predicted Delay</CTableHeaderCell>
-                    <CTableHeaderCell className="text-center">
-                      Actions
-                    </CTableHeaderCell>
+                    <CTableHeaderCell className="text-center">Actions</CTableHeaderCell>
                   </CTableRow>
                 </CTableHead>
 
                 <CTableBody>
                   {highDelayCases.map((item) => (
-                    <CTableRow
-                      key={`${item.caseId}-${item.originalIndex}`}
-                    >
+                    <CTableRow key={`${item.caseId}-${item.originalIndex}`}>
                       <CTableDataCell>
                         <strong>{item.caseId}</strong>
                       </CTableDataCell>
@@ -105,9 +90,7 @@ const HighRiskCases = () => {
                       <CTableDataCell>{item.projectType}</CTableDataCell>
 
                       <CTableDataCell>
-                        <span className="badge bg-danger fs-6">
-                          {item.predictedDelayDays} days
-                        </span>
+                        <span className="badge bg-danger fs-6">{item.predictedDelayDays} days</span>
                       </CTableDataCell>
 
                       <CTableDataCell className="text-center">
@@ -115,11 +98,7 @@ const HighRiskCases = () => {
                           <CButton
                             color="info"
                             size="sm"
-                            onClick={() =>
-                              navigate(
-                                `/view-case/${item.originalIndex}`,
-                              )
-                            }
+                            onClick={() => navigate(`/view-case/${item.originalIndex}`)}
                           >
                             👁️ View
                           </CButton>
@@ -127,11 +106,7 @@ const HighRiskCases = () => {
                           <CButton
                             color="primary"
                             size="sm"
-                            onClick={() =>
-                              navigate(
-                                `/edit-case/${item.originalIndex}`,
-                              )
-                            }
+                            onClick={() => navigate(`/edit-case/${item.originalIndex}`)}
                           >
                             ✏️ Edit
                           </CButton>

@@ -1,22 +1,9 @@
 import React from 'react'
 import { useSelector } from 'react-redux'
 
-import {
-  CAlert,
-  CBadge,
-  CCard,
-  CCardBody,
-  CCardHeader,
-  CCol,
-  CRow,
-} from '@coreui/react'
+import { CAlert, CBadge, CCard, CCardBody, CCardHeader, CCol, CRow } from '@coreui/react'
 
-import {
-  CircleMarker,
-  MapContainer,
-  Popup,
-  TileLayer,
-} from 'react-leaflet'
+import { CircleMarker, MapContainer, Popup, TileLayer } from 'react-leaflet'
 
 import 'leaflet/dist/leaflet.css'
 
@@ -124,8 +111,7 @@ const GISMap = () => {
 
           <CCardBody>
             <p className="text-body-secondary">
-              Land acquisition cases are displayed according to their state
-              and predicted delay.
+              Land acquisition cases are displayed according to their state and predicted delay.
             </p>
 
             {/* ==========================================
@@ -222,9 +208,7 @@ const GISMap = () => {
                     >
                       <Popup>
                         <div style={{ minWidth: '200px' }}>
-                          <h6>
-                            {item.caseId || 'Land Acquisition Case'}
-                          </h6>
+                          <h6>{item.caseId || 'Land Acquisition Case'}</h6>
 
                           <hr />
 
@@ -233,18 +217,15 @@ const GISMap = () => {
                           </p>
 
                           <p className="mb-1">
-                            <strong>District:</strong>{' '}
-                            {item.district || 'Not Available'}
+                            <strong>District:</strong> {item.district || 'Not Available'}
                           </p>
 
                           <p className="mb-1">
-                            <strong>Project:</strong>{' '}
-                            {item.projectType || 'Not Available'}
+                            <strong>Project:</strong> {item.projectType || 'Not Available'}
                           </p>
 
                           <p className="mb-2">
-                            <strong>Predicted Delay:</strong>{' '}
-                            {delay.toFixed(2)} days
+                            <strong>Predicted Delay:</strong> {delay.toFixed(2)} days
                           </p>
 
                           <CBadge color={getDelayBadgeColor(delay)}>
@@ -266,28 +247,24 @@ const GISMap = () => {
               <h5>📊 Map Summary</h5>
 
               <p className="text-body-secondary mb-2">
-                Total Cases Available:{' '}
-                <strong>{cases.length}</strong>
+                Total Cases Available: <strong>{cases.length}</strong>
               </p>
 
               <p className="text-body-secondary">
-                Cases Displayed on Map:{' '}
-                <strong>{mappedCases.length}</strong>
+                Cases Displayed on Map: <strong>{mappedCases.length}</strong>
               </p>
 
               {cases.length === 0 && (
                 <CAlert color="info">
-                  No cases available yet. Add cases using{' '}
-                  <strong>Add New Case</strong> and they will appear on the
-                  GIS Map.
+                  No cases available yet. Add cases using <strong>Add New Case</strong> and they
+                  will appear on the GIS Map.
                 </CAlert>
               )}
 
               {cases.length > 0 && mappedCases.length === 0 && (
                 <CAlert color="warning">
-                  Cases were found, but they either do not have a prediction
-                  yet or their state names do not match the available Indian
-                  state locations.
+                  Cases were found, but they either do not have a prediction yet or their state
+                  names do not match the available Indian state locations.
                 </CAlert>
               )}
             </div>
