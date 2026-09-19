@@ -48,8 +48,7 @@ import {
 
 import { AppBreadcrumb } from './index'
 import { AppHeaderDropdown } from './header/index'
-
-const API_URL = 'http://127.0.0.1:8000'
+import { apiFetch } from '../api'
 
 const AppHeader = () => {
   const headerRef = useRef()
@@ -68,20 +67,21 @@ const AppHeader = () => {
   const dispatch = useDispatch()
   const sidebarShow = useSelector((state) => state.sidebarShow)
 
-  // Load delay notifications from PostgreSQL through the backend
+  // =========================================================
+  // LOAD NOTIFICATIONS
+  // =========================================================
   const loadAlerts = async () => {
     setLoadingAlerts(true)
 
     try {
-      const response = await fetch(`${API_URL}/api/cases/`)
+      const response = await apiFetch('/api/cases/')
+      const data = await response.json()
 
       if (!response.ok) {
-        throw new Error('Failed to load cases')
+        throw new Error(data.detail || 'Failed to load cases')
       }
 
-      const cases = await response.json()
-
-      const caseAlerts = cases
+      const caseAlerts = data
         .map((item) => {
           const delay = Number(item.predicted_delay_days) || 0
 
@@ -125,16 +125,22 @@ const AppHeader = () => {
     }
   }
 
-  // Load notifications when header opens and refresh every 30 seconds
+  // =========================================================
+  // LOAD NOTIFICATIONS ON START + EVERY 30 SECONDS
+  // =========================================================
   useEffect(() => {
     loadAlerts()
 
-    const interval = setInterval(loadAlerts, 30000)
+    const interval = setInterval(() => {
+      loadAlerts()
+    }, 30000)
 
     return () => clearInterval(interval)
   }, [])
 
-  // Add shadow when page is scrolled
+  // =========================================================
+  // HEADER SHADOW ON SCROLL
+  // =========================================================
   useEffect(() => {
     const handleScroll = () => {
       if (headerRef.current) {
@@ -152,7 +158,9 @@ const AppHeader = () => {
     }
   }, [])
 
-  // Open the selected case
+  // =========================================================
+  // OPEN CASE FROM NOTIFICATION
+  // =========================================================
   const handleAlertClick = (caseId) => {
     navigate(`/view-case/${encodeURIComponent(caseId)}`)
   }
@@ -246,7 +254,6 @@ const AppHeader = () => {
 
         {/* Right-side header icons */}
         <CHeaderNav className="ms-auto">
-
           {/* Notifications */}
           <CDropdown variant="nav-item" placement="bottom-end">
             <CDropdownToggle
