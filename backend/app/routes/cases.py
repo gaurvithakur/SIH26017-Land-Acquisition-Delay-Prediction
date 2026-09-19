@@ -1,6 +1,7 @@
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 
+from app.core.security import get_current_user
 from app.db.database import get_db
 from app.db.models import Case
 from app.schemas.case import CaseCreate, CaseResponse, CaseUpdate
@@ -9,12 +10,14 @@ router = APIRouter(prefix="/api/cases", tags=["Cases"])
 
 
 @router.post("/", response_model=CaseResponse)
-def create_case(case_data: CaseCreate, db: Session = Depends(get_db)):
-    existing_case = (
-        db.query(Case)
-        .filter(Case.case_id == case_data.case_id)
-        .first()
-    )
+def create_case(
+    case_data: CaseCreate,
+    db: Session = Depends(get_db),
+    current_user=Depends(get_current_user),
+):
+    existing_case = db.query(Case).filter(
+        Case.case_id == case_data.case_id
+    ).first()
 
     if existing_case:
         raise HTTPException(
@@ -23,7 +26,6 @@ def create_case(case_data: CaseCreate, db: Session = Depends(get_db)):
         )
 
     case = Case(**case_data.model_dump())
-
     db.add(case)
     db.commit()
     db.refresh(case)
@@ -32,17 +34,22 @@ def create_case(case_data: CaseCreate, db: Session = Depends(get_db)):
 
 
 @router.get("/", response_model=list[CaseResponse])
-def get_cases(db: Session = Depends(get_db)):
+def get_cases(
+    db: Session = Depends(get_db),
+    current_user=Depends(get_current_user),
+):
     return db.query(Case).order_by(Case.id.desc()).all()
 
 
 @router.get("/{case_id}", response_model=CaseResponse)
-def get_case(case_id: str, db: Session = Depends(get_db)):
-    case = (
-        db.query(Case)
-        .filter(Case.case_id == case_id)
-        .first()
-    )
+def get_case(
+    case_id: str,
+    db: Session = Depends(get_db),
+    current_user=Depends(get_current_user),
+):
+    case = db.query(Case).filter(
+        Case.case_id == case_id
+    ).first()
 
     if not case:
         raise HTTPException(
@@ -58,12 +65,11 @@ def update_case(
     case_id: str,
     case_data: CaseUpdate,
     db: Session = Depends(get_db),
+    current_user=Depends(get_current_user),
 ):
-    case = (
-        db.query(Case)
-        .filter(Case.case_id == case_id)
-        .first()
-    )
+    case = db.query(Case).filter(
+        Case.case_id == case_id
+    ).first()
 
     if not case:
         raise HTTPException(
@@ -83,12 +89,14 @@ def update_case(
 
 
 @router.delete("/{case_id}")
-def delete_case(case_id: str, db: Session = Depends(get_db)):
-    case = (
-        db.query(Case)
-        .filter(Case.case_id == case_id)
-        .first()
-    )
+def delete_case(
+    case_id: str,
+    db: Session = Depends(get_db),
+    current_user=Depends(get_current_user),
+):
+    case = db.query(Case).filter(
+        Case.case_id == case_id
+    ).first()
 
     if not case:
         raise HTTPException(

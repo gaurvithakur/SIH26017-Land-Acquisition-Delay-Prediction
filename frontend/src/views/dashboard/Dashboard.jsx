@@ -19,7 +19,7 @@ import {
   CSpinner,
 } from '@coreui/react'
 
-const API_URL = 'http://127.0.0.1:8000'
+import { apiFetch } from '../../api'
 
 const Dashboard = () => {
   const navigate = useNavigate()
@@ -34,7 +34,7 @@ const Dashboard = () => {
     setError('')
 
     try {
-      const response = await fetch(`${API_URL}/api/cases/`)
+      const response = await apiFetch('/api/cases/')
 
       const data = await response.json()
 
@@ -120,8 +120,8 @@ const Dashboard = () => {
     }
 
     try {
-      const response = await fetch(
-        `${API_URL}/api/cases/${encodeURIComponent(caseId)}`,
+      const response = await apiFetch(
+        `/api/cases/${encodeURIComponent(caseId)}`,
         {
           method: 'DELETE',
         },
@@ -133,7 +133,6 @@ const Dashboard = () => {
         throw new Error(data.detail || 'Failed to delete case.')
       }
 
-      // Reload database data
       await loadCases()
     } catch (err) {
       setError(err.message || 'Unable to delete case.')
@@ -145,6 +144,7 @@ const Dashboard = () => {
     return (
       <div className="text-center py-5">
         <CSpinner color="primary" />
+
         <div className="mt-3 text-body-secondary">
           Loading dashboard data...
         </div>
@@ -268,7 +268,6 @@ const Dashboard = () => {
 
               {/* High Delay */}
               <div className="mb-4">
-
                 <div className="d-flex justify-content-between mb-2">
                   <span>🔴 High Delay</span>
 
@@ -281,12 +280,10 @@ const Dashboard = () => {
                   color="danger"
                   value={highPercentage}
                 />
-
               </div>
 
               {/* Moderate Delay */}
               <div className="mb-4">
-
                 <div className="d-flex justify-content-between mb-2">
                   <span>🟡 Moderate Delay</span>
 
@@ -299,12 +296,10 @@ const Dashboard = () => {
                   color="warning"
                   value={moderatePercentage}
                 />
-
               </div>
 
               {/* Lower Delay */}
               <div>
-
                 <div className="d-flex justify-content-between mb-2">
                   <span>🟢 Lower Delay</span>
 
@@ -317,7 +312,6 @@ const Dashboard = () => {
                   color="success"
                   value={lowerPercentage}
                 />
-
               </div>
 
             </CCardBody>
@@ -432,7 +426,6 @@ const Dashboard = () => {
                   <CTableBody>
 
                     {cases.map((item) => {
-
                       const delay =
                         Number(item.predicted_delay_days) || 0
 
