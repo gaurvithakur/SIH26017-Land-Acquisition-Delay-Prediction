@@ -1,11 +1,21 @@
-import React from 'react'
-import { useSelector } from 'react-redux'
+import React, { useEffect, useState } from 'react'
 
-import { CAlert, CBadge, CCard, CCardBody, CCardHeader, CCol, CRow } from '@coreui/react'
+import {
+  CAlert,
+  CBadge,
+  CCard,
+  CCardBody,
+  CCardHeader,
+  CCol,
+  CRow,
+  CSpinner,
+} from '@coreui/react'
 
 import { CircleMarker, MapContainer, Popup, TileLayer } from 'react-leaflet'
 
 import 'leaflet/dist/leaflet.css'
+
+const API_URL = 'http://127.0.0.1:8000'
 
 // ==========================================
 // Approximate coordinates of Indian states
@@ -72,7 +82,7 @@ const getDelayBadgeColor = (delay) => {
 }
 
 // ==========================================
-// Get delay category for display
+// Get delay category
 // ==========================================
 
 const getDelayCategory = (delay) => {
@@ -89,30 +99,107 @@ const getDelayCategory = (delay) => {
 // ==========================================
 
 const GISMap = () => {
-  // Get cases directly from Redux store
-  const cases = useSelector((state) => state.cases)
+  const [cases, setCases] = useState([])
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState('')
 
-  // Only show cases with a valid state and prediction
+  // ==========================================
+  // Load cases from PostgreSQL through API
+  // ==========================================
+
+  const loadCases = async () => {
+    try {
+      setLoading(true)
+      setError('')
+
+      const response = await fetch(`${API_URL}/api/cases/`)
+
+      if (!response.ok) {
+        throw new Error('Failed to load cases from backend')
+      }
+
+      const data = await response.json()
+
+      setCases(data)
+    } catch (err) {
+      console.error('GIS map error:', err)
+      setError('Unable to load land acquisition cases.')
+      setCases([])
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  useEffect(() => {
+    loadCases()
+
+    // Refresh map data every 30 seconds
+    const interval = setInterval(loadCases, 30000)
+
+    return () => clearInterval(interval)
+  }, [])
+
+  // ==========================================
+  // Only show cases that have a valid state
+  // and prediction
+  // ==========================================
+
   const mappedCases = cases.filter(
     (item) =>
       item.state &&
       stateCoordinates[item.state] &&
-      item.predictedDelayDays !== undefined &&
-      item.predictedDelayDays !== null,
+      item.predicted_delay_days !== null &&
+      item.predicted_delay_days !== undefined,
   )
+
+  // ==========================================
+  // Loading
+  // ==========================================
+
+  if (loading) {
+    return (
+      <CRow>
+        <CCol xs={12}>
+          <CCard className="mb-4 shadow-sm">
+            <CCardHeader>
+              <strong>India Land Acquisition Delay Map</strong>
+            </CCardHeader>
+
+            <CCardBody className="text-center py-5">
+              <CSpinner />
+              <p className="text-body-secondary mt-3 mb-0">
+                Loading land acquisition cases...
+              </p>
+            </CCardBody>
+          </CCard>
+        </CCol>
+      </CRow>
+    )
+  }
 
   return (
     <CRow>
       <CCol xs={12}>
         <CCard className="mb-4 shadow-sm">
           <CCardHeader>
-            <strong>📍 India Land Acquisition Delay Map</strong>
+            <strong>India Land Acquisition Delay Map</strong>
           </CCardHeader>
 
           <CCardBody>
             <p className="text-body-secondary">
-              Land acquisition cases are displayed according to their state and predicted delay.
+              Land acquisition cases are displayed according to their
+              state and predicted delay.
             </p>
+
+            {/* ==========================================
+                ERROR
+            ========================================== */}
+
+            {error && (
+              <CAlert color="danger">
+                {error}
+              </CAlert>
+            )}
 
             {/* ==========================================
                 LEGEND
@@ -128,7 +215,7 @@ const GISMap = () => {
                     borderRadius: '50%',
                     display: 'inline-block',
                   }}
-                ></span>
+                />
 
                 <span>High Delay (120+ days)</span>
               </div>
@@ -142,7 +229,7 @@ const GISMap = () => {
                     borderRadius: '50%',
                     display: 'inline-block',
                   }}
-                ></span>
+                />
 
                 <span>Moderate Delay (60–119 days)</span>
               </div>
@@ -156,7 +243,7 @@ const GISMap = () => {
                     borderRadius: '50%',
                     display: 'inline-block',
                   }}
-                ></span>
+                />
 
                 <span>Lower Delay (&lt;60 days)</span>
               </div>
@@ -191,13 +278,13 @@ const GISMap = () => {
                     CASE MARKERS
                 ====================================== */}
 
-                {mappedCases.map((item, index) => {
+                {mappedCases.map((item) => {
                   const coordinates = stateCoordinates[item.state]
-                  const delay = Number(item.predictedDelayDays)
+                  const delay = Number(item.predicted_delay_days)
 
                   return (
                     <CircleMarker
-                      key={`${item.caseId}-${index}`}
+                      key={item.case_id}
                       center={coordinates}
                       radius={12}
                       pathOptions={{
@@ -207,25 +294,31 @@ const GISMap = () => {
                       }}
                     >
                       <Popup>
-                        <div style={{ minWidth: '200px' }}>
-                          <h6>{item.caseId || 'Land Acquisition Case'}</h6>
+                        <div style={{ minWidth: '220px' }}>
+                          <h6>
+                            {item.case_id || 'Land Acquisition Case'}
+                          </h6>
 
                           <hr />
 
                           <p className="mb-1">
-                            <strong>State:</strong> {item.state}
+                            <strong>State:</strong>{' '}
+                            {item.state}
                           </p>
 
                           <p className="mb-1">
-                            <strong>District:</strong> {item.district || 'Not Available'}
+                            <strong>District:</strong>{' '}
+                            {item.district || 'Not Available'}
                           </p>
 
                           <p className="mb-1">
-                            <strong>Project:</strong> {item.projectType || 'Not Available'}
+                            <strong>Project:</strong>{' '}
+                            {item.project_type || 'Not Available'}
                           </p>
 
                           <p className="mb-2">
-                            <strong>Predicted Delay:</strong> {delay.toFixed(2)} days
+                            <strong>Predicted Delay:</strong>{' '}
+                            {delay.toFixed(2)} days
                           </p>
 
                           <CBadge color={getDelayBadgeColor(delay)}>
@@ -244,27 +337,42 @@ const GISMap = () => {
             ========================================== */}
 
             <div className="mt-4">
-              <h5>📊 Map Summary</h5>
+              <h5>Map Summary</h5>
 
               <p className="text-body-secondary mb-2">
-                Total Cases Available: <strong>{cases.length}</strong>
+                Total Cases Available:{' '}
+                <strong>{cases.length}</strong>
               </p>
 
               <p className="text-body-secondary">
-                Cases Displayed on Map: <strong>{mappedCases.length}</strong>
+                Cases Displayed on Map:{' '}
+                <strong>{mappedCases.length}</strong>
               </p>
 
+              {/* No cases */}
               {cases.length === 0 && (
                 <CAlert color="info">
-                  No cases available yet. Add cases using <strong>Add New Case</strong> and they
-                  will appear on the GIS Map.
+                  No cases available yet. Add cases using{' '}
+                  <strong>Add New Case</strong> and they will appear
+                  on the GIS Map.
                 </CAlert>
               )}
 
+              {/* Cases exist but cannot be mapped */}
               {cases.length > 0 && mappedCases.length === 0 && (
                 <CAlert color="warning">
-                  Cases were found, but they either do not have a prediction yet or their state
-                  names do not match the available Indian state locations.
+                  Cases were found, but they either do not have a
+                  prediction yet or their state names do not match
+                  the available Indian state locations.
+                </CAlert>
+              )}
+
+              {/* Successfully mapped */}
+              {mappedCases.length > 0 && (
+                <CAlert color="success">
+                  {mappedCases.length} case
+                  {mappedCases.length !== 1 ? 's' : ''} currently
+                  displayed on the map.
                 </CAlert>
               )}
             </div>
