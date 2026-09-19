@@ -7,23 +7,41 @@ export const getAuthToken = () => {
   )
 }
 
+export const clearAuth = () => {
+  localStorage.removeItem('access_token')
+  localStorage.removeItem('user')
+  sessionStorage.removeItem('access_token')
+  sessionStorage.removeItem('user')
+}
+
 export const apiFetch = async (endpoint, options = {}) => {
   const token = getAuthToken()
 
-  const headers = {
-    ...(options.headers || {}),
+  if (!token) {
+    clearAuth()
+    window.location.hash = '#/authentication/login'
+    throw new Error('Not authenticated')
   }
 
-  if (token) {
-    headers.Authorization = `Bearer ${token}`
+  const headers = {
+    ...(options.headers || {}),
+    Authorization: `Bearer ${token}`,
   }
 
   if (options.body && !headers['Content-Type']) {
     headers['Content-Type'] = 'application/json'
   }
 
-  return fetch(`${API_URL}${endpoint}`, {
+  const response = await fetch(`${API_URL}${endpoint}`, {
     ...options,
     headers,
   })
+
+  if (response.status === 401) {
+    clearAuth()
+    window.location.hash = '#/authentication/login'
+    throw new Error('Session expired. Please login again.')
+  }
+
+  return response
 }

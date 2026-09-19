@@ -134,11 +134,16 @@ export const routes = [
     name: 'GIS Map',
     element: GISMap,
   },
+
+  // IMPORTANT:
+  // ViewCase uses useParams().caseId
   {
-    path: '/view-case/:index',
+    path: '/view-case/:caseId',
     name: 'View Case',
     element: ViewCase,
   },
+
+  // EditCase uses useParams().caseId
   {
     path: '/edit-case/:caseId',
     name: 'Edit Case',

@@ -1,5 +1,4 @@
-import React from 'react'
-import { useSelector } from 'react-redux'
+import React, { useEffect, useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 
 import {
@@ -9,25 +8,77 @@ import {
   CCardHeader,
   CCol,
   CRow,
+  CSpinner,
 } from '@coreui/react'
 
+import { apiFetch } from '../../api'
+
 const ViewCase = () => {
-  const { index } = useParams()
+  const { caseId } = useParams()
   const navigate = useNavigate()
 
-  const cases = useSelector((state) => state.cases)
+  const [selectedCase, setSelectedCase] = useState(null)
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState('')
 
-  // Get selected case
-  const selectedCase = cases[Number(index)]
+  useEffect(() => {
+    const loadCase = async () => {
+      try {
+        setLoading(true)
+        setError('')
 
-  // If case is not found
-  if (!selectedCase) {
+        const response = await apiFetch(
+          `/api/cases/${encodeURIComponent(caseId)}`,
+        )
+
+        const data = await response.json()
+
+        if (!response.ok) {
+          throw new Error(data.detail || 'Failed to load case.')
+        }
+
+        setSelectedCase(data)
+      } catch (err) {
+        console.error(err)
+        setError(err.message || 'Unable to load case.')
+      } finally {
+        setLoading(false)
+      }
+    }
+
+    if (caseId) {
+      loadCase()
+    }
+  }, [caseId])
+
+  if (loading) {
+    return (
+      <div className="text-center py-5">
+        <CSpinner color="primary" />
+
+        <div className="mt-3 text-body-secondary">
+          Loading case details...
+        </div>
+      </div>
+    )
+  }
+
+  if (error || !selectedCase) {
     return (
       <CCard>
         <CCardBody>
           <h4>Case not found.</h4>
 
-          <CButton color="primary" onClick={() => navigate('/dashboard')}>
+          {error && (
+            <p className="text-danger">
+              {error}
+            </p>
+          )}
+
+          <CButton
+            color="primary"
+            onClick={() => navigate('/dashboard')}
+          >
             Back to Dashboard
           </CButton>
         </CCardBody>
@@ -39,24 +90,32 @@ const ViewCase = () => {
     <CRow>
       <CCol xs={12}>
         <CCard className="mb-4 shadow-sm">
+
           <CCardHeader>
             <strong>👁️ Land Acquisition Case Details</strong>
           </CCardHeader>
 
           <CCardBody>
-            {/* Basic Information */}
-            <h5 className="mb-3">📋 Basic Information</h5>
+
+            {/* ================= BASIC INFORMATION ================= */}
+
+            <h5 className="mb-3">
+              📋 Basic Information
+            </h5>
 
             <CRow className="mb-4">
+
               <CCol md={4} className="mb-3">
                 <strong>Case ID</strong>
+
                 <div className="text-body-secondary">
-                  {selectedCase.caseId}
+                  {selectedCase.case_id}
                 </div>
               </CCol>
 
               <CCol md={4} className="mb-3">
                 <strong>State</strong>
+
                 <div className="text-body-secondary">
                   {selectedCase.state}
                 </div>
@@ -64,6 +123,7 @@ const ViewCase = () => {
 
               <CCol md={4} className="mb-3">
                 <strong>District</strong>
+
                 <div className="text-body-secondary">
                   {selectedCase.district}
                 </div>
@@ -71,186 +131,234 @@ const ViewCase = () => {
 
               <CCol md={4} className="mb-3">
                 <strong>Project Type</strong>
+
                 <div className="text-body-secondary">
-                  {selectedCase.projectType}
+                  {selectedCase.project_type}
                 </div>
               </CCol>
 
               <CCol md={4} className="mb-3">
                 <strong>Land Area</strong>
+
                 <div className="text-body-secondary">
-                  {selectedCase.landArea} Acres
+                  {selectedCase.land_area_acres} Acres
                 </div>
               </CCol>
 
               <CCol md={4} className="mb-3">
                 <strong>Number of Landowners</strong>
+
                 <div className="text-body-secondary">
-                  {selectedCase.landowners}
+                  {selectedCase.number_of_landowners}
                 </div>
               </CCol>
 
               <CCol md={4} className="mb-3">
                 <strong>Acquisition Stage</strong>
+
                 <div className="text-body-secondary">
-                  {selectedCase.acquisitionStage}
+                  {selectedCase.acquisition_stage}
                 </div>
               </CCol>
+
             </CRow>
 
             <hr />
 
-            {/* Acquisition Factors */}
-            <h5 className="mb-3 mt-4">⚠️ Acquisition Factors</h5>
+            {/* ================= ACQUISITION FACTORS ================= */}
+
+            <h5 className="mb-3 mt-4">
+              ⚠️ Acquisition Factors
+            </h5>
 
             <CRow className="mb-4">
+
               <CCol md={4} className="mb-3">
                 <strong>Number of Objections</strong>
+
                 <div className="text-body-secondary">
-                  {selectedCase.objections}
+                  {selectedCase.number_of_objections}
                 </div>
               </CCol>
 
               <CCol md={4} className="mb-3">
                 <strong>Number of Court Cases</strong>
+
                 <div className="text-body-secondary">
-                  {selectedCase.courtCases}
+                  {selectedCase.number_of_court_cases}
                 </div>
               </CCol>
 
               <CCol md={4} className="mb-3">
                 <strong>Compensation Completed</strong>
+
                 <div className="text-body-secondary">
-                  {selectedCase.compensation}%
+                  {selectedCase.compensation_completed_pct}%
                 </div>
               </CCol>
 
               <CCol md={4} className="mb-3">
                 <strong>Pending Approvals</strong>
+
                 <div className="text-body-secondary">
-                  {selectedCase.pendingApprovals}
+                  {selectedCase.pending_approvals}
                 </div>
               </CCol>
 
               <CCol md={4} className="mb-3">
                 <strong>Days in Current Stage</strong>
+
                 <div className="text-body-secondary">
-                  {selectedCase.daysInCurrentStage} Days
+                  {selectedCase.days_in_current_stage} Days
                 </div>
               </CCol>
 
               <CCol md={4} className="mb-3">
                 <strong>Sanction Amount</strong>
+
                 <div className="text-body-secondary">
-                  {selectedCase.sanctionAmount} Lakh
+                  {selectedCase.sanction_amount_lakh} Lakh
                 </div>
               </CCol>
 
               <CCol md={4} className="mb-3">
                 <strong>Structures Affected</strong>
+
                 <div className="text-body-secondary">
-                  {selectedCase.structuresAffected}
+                  {selectedCase.structures_affected}
                 </div>
               </CCol>
 
               <CCol md={4} className="mb-3">
                 <strong>Dispute Severity</strong>
+
                 <div className="text-body-secondary">
-                  {selectedCase.disputeSeverity}
+                  {selectedCase.dispute_severity}
                 </div>
               </CCol>
 
               <CCol md={4} className="mb-3">
                 <strong>Relocation Required</strong>
+
                 <div className="text-body-secondary">
-                  {selectedCase.relocationRequired}
+                  {selectedCase.relocation_required}
                 </div>
               </CCol>
+
             </CRow>
 
             <hr />
 
-            {/* Prediction Result */}
-            <h5 className="mb-3 mt-4">🤖 LANDPREDICT Prediction</h5>
+            {/* ================= PREDICTION ================= */}
+
+            <h5 className="mb-3 mt-4">
+              🤖 LANDPREDICT Prediction
+            </h5>
 
             <CCard className="mb-4 shadow-sm">
+
               <CCardBody className="text-center">
+
                 <small className="text-body-secondary">
                   PREDICTED DELAY
                 </small>
 
                 <h2 className="mt-2">
-                  {selectedCase.predictedDelayDays !== undefined &&
-                  selectedCase.predictedDelayDays !== null
-                    ? `${selectedCase.predictedDelayDays} Days`
+
+                  {selectedCase.predicted_delay_days !== null &&
+                  selectedCase.predicted_delay_days !== undefined
+                    ? `${selectedCase.predicted_delay_days} Days`
                     : 'Not predicted'}
+
                 </h2>
 
                 <p className="text-body-secondary mb-0">
                   Estimated by the LANDPREDICT machine learning model.
                 </p>
+
               </CCardBody>
+
             </CCard>
 
-            {/* Status Information */}
-            <h5 className="mb-3 mt-4">📄 Status Information</h5>
+            {/* ================= STATUS ================= */}
+
+            <h5 className="mb-3 mt-4">
+              📄 Status Information
+            </h5>
 
             <CRow className="mb-4">
+
               <CCol md={4} className="mb-3">
                 <strong>Land Acquisition Agency</strong>
+
                 <div className="text-body-secondary">
-                  {selectedCase.landAcquisitionAgency}
+                  {selectedCase.land_acquisition_agency}
                 </div>
               </CCol>
 
               <CCol md={4} className="mb-3">
                 <strong>Environmental Clearance</strong>
+
                 <div className="text-body-secondary">
-                  {selectedCase.environmentalClearance}
+                  {selectedCase.environmental_clearance}
                 </div>
               </CCol>
 
               <CCol md={4} className="mb-3">
                 <strong>Forest Clearance</strong>
+
                 <div className="text-body-secondary">
-                  {selectedCase.forestClearance}
+                  {selectedCase.forest_clearance}
                 </div>
               </CCol>
 
               <CCol md={4} className="mb-3">
                 <strong>Payment Status</strong>
+
                 <div className="text-body-secondary">
-                  {selectedCase.paymentStatus}
+                  {selectedCase.payment_status}
                 </div>
               </CCol>
 
               <CCol md={4} className="mb-3">
                 <strong>Document Verification</strong>
+
                 <div className="text-body-secondary">
-                  {selectedCase.documentVerificationStatus}
+                  {selectedCase.document_verification_status}
                 </div>
               </CCol>
 
               <CCol md={4} className="mb-3">
                 <strong>Project Length</strong>
+
                 <div className="text-body-secondary">
-                  {selectedCase.projectLength} KM
+                  {selectedCase.project_length_km} KM
                 </div>
               </CCol>
 
               <CCol md={4} className="mb-3">
                 <strong>Last Review</strong>
+
                 <div className="text-body-secondary">
-                  {selectedCase.lastReviewDaysAgo} Days Ago
+                  {selectedCase.last_review_days_ago} Days Ago
                 </div>
               </CCol>
+
             </CRow>
 
-            {/* Buttons */}
+            {/* ================= ACTION BUTTONS ================= */}
+
             <div className="d-flex gap-2">
+
               <CButton
                 color="primary"
-                onClick={() => navigate(`/edit-case/${index}`)}
+                onClick={() =>
+                  navigate(
+                    `/edit-case/${encodeURIComponent(
+                      selectedCase.case_id,
+                    )}`,
+                  )
+                }
               >
                 ✏️ Edit Case
               </CButton>
@@ -261,8 +369,11 @@ const ViewCase = () => {
               >
                 ← Back to Dashboard
               </CButton>
+
             </div>
+
           </CCardBody>
+
         </CCard>
       </CCol>
     </CRow>
