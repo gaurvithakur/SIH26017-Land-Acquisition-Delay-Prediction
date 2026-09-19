@@ -140,7 +140,7 @@ export const routes = [
     element: ViewCase,
   },
   {
-    path: '/edit-case/:index',
+    path: '/edit-case/:caseId',
     name: 'Edit Case',
     element: EditCase,
   },

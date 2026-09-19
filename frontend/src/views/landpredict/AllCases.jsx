@@ -1,8 +1,9 @@
-import React, { useState } from 'react'
-import { useDispatch, useSelector } from 'react-redux'
+import React, { useEffect, useState } from 'react'
+import { useDispatch } from 'react-redux'
 import { useNavigate } from 'react-router-dom'
 
 import {
+  CAlert,
   CButton,
   CCard,
   CCardBody,
@@ -10,6 +11,7 @@ import {
   CCol,
   CFormInput,
   CRow,
+  CSpinner,
   CTable,
   CTableBody,
   CTableDataCell,
@@ -18,37 +20,83 @@ import {
   CTableRow,
 } from '@coreui/react'
 
+const API_URL = 'http://127.0.0.1:8000'
+
 const AllCases = () => {
   const dispatch = useDispatch()
   const navigate = useNavigate()
 
-  // Get all cases from Redux
-  const cases = useSelector((state) => state.cases)
-
-  // Search state
+  const [cases, setCases] = useState([])
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState('')
   const [search, setSearch] = useState('')
 
-  // Filter cases
+  // Load cases from PostgreSQL through FastAPI
+  const fetchCases = async () => {
+    try {
+      setLoading(true)
+      setError('')
+
+      const response = await fetch(`${API_URL}/api/cases/`)
+
+      if (!response.ok) {
+        throw new Error(`Failed to load cases. Status: ${response.status}`)
+      }
+
+      const data = await response.json()
+
+      setCases(data)
+
+      // Keep Redux updated too
+      dispatch({
+        type: 'SET_CASES',
+        payload: data,
+      })
+    } catch (err) {
+      console.error('Error loading cases:', err)
+      setError('Unable to load cases from the server.')
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  useEffect(() => {
+    fetchCases()
+  }, [])
+
+  // Search/filter
   const filteredCases = cases.filter((item) => {
     const searchText = search.toLowerCase()
 
     return (
-      item.caseId?.toLowerCase().includes(searchText) ||
+      item.case_id?.toLowerCase().includes(searchText) ||
       item.state?.toLowerCase().includes(searchText) ||
       item.district?.toLowerCase().includes(searchText) ||
-      item.projectType?.toLowerCase().includes(searchText)
+      item.project_type?.toLowerCase().includes(searchText)
     )
   })
 
-  // Delete case
-  const handleDelete = (index, caseId) => {
+  // Delete case from database
+  const handleDelete = async (caseId) => {
     const confirmDelete = window.confirm(`Are you sure you want to delete case ${caseId}?`)
 
-    if (confirmDelete) {
-      dispatch({
-        type: 'DELETE_CASE',
-        payload: index,
+    if (!confirmDelete) {
+      return
+    }
+
+    try {
+      const response = await fetch(`${API_URL}/api/cases/${encodeURIComponent(caseId)}`, {
+        method: 'DELETE',
       })
+
+      if (!response.ok) {
+        throw new Error(`Delete failed. Status: ${response.status}`)
+      }
+
+      await fetchCases()
+    } catch (err) {
+      console.error('Error deleting case:', err)
+      alert('Unable to delete the case.')
     }
   }
 
@@ -59,9 +107,7 @@ const AllCases = () => {
         <CCol>
           <h2 className="fw-bold">All Land Acquisition Cases</h2>
 
-          <p className="text-body-secondary">
-            View, search and manage all LANDPREDICT cases.
-          </p>
+          <p className="text-body-secondary">View, search and manage all LANDPREDICT cases.</p>
         </CCol>
       </CRow>
 
@@ -77,7 +123,10 @@ const AllCases = () => {
         </CCardBody>
       </CCard>
 
-      {/* Cases Table */}
+      {/* Error */}
+      {error && <CAlert color="danger">{error}</CAlert>}
+
+      {/* Cases */}
       <CRow>
         <CCol>
           <CCard className="shadow-sm">
@@ -90,7 +139,15 @@ const AllCases = () => {
             </CCardHeader>
 
             <CCardBody>
-              {cases.length === 0 ? (
+              {/* Loading */}
+              {loading ? (
+                <div className="text-center py-5">
+                  <CSpinner />
+
+                  <p className="mt-3 text-body-secondary">Loading cases from database...</p>
+                </div>
+              ) : cases.length === 0 ? (
+                /* No cases */
                 <div className="text-center py-5">
                   <h5>No cases added yet.</h5>
 
@@ -103,21 +160,18 @@ const AllCases = () => {
                   </CButton>
                 </div>
               ) : filteredCases.length === 0 ? (
+                /* No search results */
                 <div className="text-center py-5">
                   <h5>No matching cases found.</h5>
 
-                  <p className="text-body-secondary">
-                    Try changing your search.
-                  </p>
+                  <p className="text-body-secondary">Try changing your search.</p>
 
-                  <CButton
-                    color="secondary"
-                    onClick={() => setSearch('')}
-                  >
+                  <CButton color="secondary" onClick={() => setSearch('')}>
                     Clear Search
                   </CButton>
                 </div>
               ) : (
+                /* Table */
                 <CTable responsive hover align="middle">
                   <CTableHead>
                     <CTableRow>
@@ -126,83 +180,63 @@ const AllCases = () => {
                       <CTableHeaderCell>District</CTableHeaderCell>
                       <CTableHeaderCell>Project Type</CTableHeaderCell>
                       <CTableHeaderCell>Predicted Delay</CTableHeaderCell>
-                      <CTableHeaderCell className="text-center">
-                        Actions
-                      </CTableHeaderCell>
+
+                      <CTableHeaderCell className="text-center">Actions</CTableHeaderCell>
                     </CTableRow>
                   </CTableHead>
 
                   <CTableBody>
-                    {filteredCases.map((item) => {
-                      // Find original index because filtered list index
-                      // may be different from Redux array index
-                      const originalIndex = cases.indexOf(item)
+                    {filteredCases.map((item) => (
+                      <CTableRow key={item.id}>
+                        <CTableDataCell>
+                          <strong>{item.case_id}</strong>
+                        </CTableDataCell>
 
-                      return (
-                        <CTableRow key={`${item.caseId}-${originalIndex}`}>
-                          <CTableDataCell>
-                            <strong>{item.caseId}</strong>
-                          </CTableDataCell>
+                        <CTableDataCell>{item.state}</CTableDataCell>
 
-                          <CTableDataCell>
-                            {item.state}
-                          </CTableDataCell>
+                        <CTableDataCell>{item.district}</CTableDataCell>
 
-                          <CTableDataCell>
-                            {item.district}
-                          </CTableDataCell>
+                        <CTableDataCell>{item.project_type}</CTableDataCell>
 
-                          <CTableDataCell>
-                            {item.projectType}
-                          </CTableDataCell>
+                        <CTableDataCell>
+                          {item.predicted_delay_days !== undefined &&
+                          item.predicted_delay_days !== null
+                            ? `${item.predicted_delay_days} days`
+                            : 'Not predicted'}
+                        </CTableDataCell>
 
-                          <CTableDataCell>
-                            {item.predictedDelayDays !== undefined &&
-                            item.predictedDelayDays !== null
-                              ? `${item.predictedDelayDays} days`
-                              : 'Not predicted'}
-                          </CTableDataCell>
+                        <CTableDataCell className="text-center">
+                          <div className="d-flex gap-2 justify-content-center">
+                            {/* View */}
+                            <CButton
+                              color="info"
+                              size="sm"
+                              onClick={() => navigate(`/view-case/${item.case_id}`)}
+                            >
+                              👁️ View
+                            </CButton>
 
-                          {/* Action Buttons */}
-                          <CTableDataCell className="text-center">
-                            <div className="d-flex gap-2 justify-content-center">
-                              {/* View */}
-                              <CButton
-                                color="info"
-                                size="sm"
-                                onClick={() =>
-                                  navigate(`/view-case/${originalIndex}`)
-                                }
-                              >
-                                👁️ View
-                              </CButton>
+                            {/* Edit */}
+                            <CButton
+                              color="primary"
+                              size="sm"
+                              onClick={() => navigate(`/edit-case/${item.case_id}`)}
+                            >
+                              ✏️ Edit
+                            </CButton>
 
-                              {/* Edit */}
-                              <CButton
-                                color="primary"
-                                size="sm"
-                                onClick={() =>
-                                  navigate(`/edit-case/${originalIndex}`)
-                                }
-                              >
-                                ✏️ Edit
-                              </CButton>
-
-                              {/* Delete */}
-                              <CButton
-                                color="danger"
-                                size="sm"
-                                onClick={() =>
-                                  handleDelete(originalIndex, item.caseId)
-                                }
-                              >
-                                🗑️
-                              </CButton>
-                            </div>
-                          </CTableDataCell>
-                        </CTableRow>
-                      )
-                    })}
+                            {/* Delete */}
+                            <CButton
+                              color="danger"
+                              size="sm"
+                              onClick={() => handleDelete(item.case_id)}
+                            >
+                              🗑️
+                            </CButton>
+                          </div>
+                        </CTableDataCell>
+                      </CTableRow>
+                    ))}
                   </CTableBody>
                 </CTable>
               )}
@@ -215,4 +249,3 @@ const AllCases = () => {
 }
 
 export default AllCases
-

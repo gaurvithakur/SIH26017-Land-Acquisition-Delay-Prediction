@@ -1,5 +1,4 @@
-import React, { useState } from 'react'
-import { useDispatch, useSelector } from 'react-redux'
+import React, { useEffect, useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 
 import {
@@ -18,42 +17,94 @@ import {
 const API_URL = 'http://127.0.0.1:8000'
 
 const EditCase = () => {
-  const { index } = useParams()
-  const dispatch = useDispatch()
+  const { caseId } = useParams()
   const navigate = useNavigate()
 
-  const cases = useSelector((state) => state.cases)
-  const selectedCase = cases[Number(index)]
+  const [loading, setLoading] = useState(true)
+  const [saving, setSaving] = useState(false)
+  const [error, setError] = useState('')
 
   const [formData, setFormData] = useState({
-    caseId: selectedCase?.caseId || '',
-    state: selectedCase?.state || '',
-    district: selectedCase?.district || '',
-    projectType: selectedCase?.projectType || '',
-    landArea: selectedCase?.landArea || '',
-    landowners: selectedCase?.landowners || '',
-    acquisitionStage: selectedCase?.acquisitionStage || '',
-    objections: selectedCase?.objections || '',
-    courtCases: selectedCase?.courtCases || '',
-    compensation: selectedCase?.compensation || '',
-    pendingApprovals: selectedCase?.pendingApprovals || '',
-    daysInCurrentStage: selectedCase?.daysInCurrentStage || '',
-    sanctionAmount: selectedCase?.sanctionAmount || '',
-    landAcquisitionAgency: selectedCase?.landAcquisitionAgency || '',
-    environmentalClearance: selectedCase?.environmentalClearance || '',
-    forestClearance: selectedCase?.forestClearance || '',
-    relocationRequired: selectedCase?.relocationRequired || '',
-    structuresAffected: selectedCase?.structuresAffected || '',
-    disputeSeverity: selectedCase?.disputeSeverity || '',
-    paymentStatus: selectedCase?.paymentStatus || '',
-    documentVerificationStatus:
-      selectedCase?.documentVerificationStatus || '',
-    projectLength: selectedCase?.projectLength || '',
-    lastReviewDaysAgo: selectedCase?.lastReviewDaysAgo || '',
+    caseId: '',
+    state: '',
+    district: '',
+    projectType: '',
+    landArea: '',
+    landowners: '',
+    acquisitionStage: '',
+    objections: '',
+    courtCases: '',
+    compensation: '',
+    pendingApprovals: '',
+    daysInCurrentStage: '',
+    sanctionAmount: '',
+    landAcquisitionAgency: '',
+    environmentalClearance: '',
+    forestClearance: '',
+    relocationRequired: '',
+    structuresAffected: '',
+    disputeSeverity: '',
+    paymentStatus: '',
+    documentVerificationStatus: '',
+    projectLength: '',
+    lastReviewDaysAgo: '',
   })
 
-  const [loading, setLoading] = useState(false)
-  const [error, setError] = useState('')
+  // Load case from database
+  useEffect(() => {
+    const fetchCase = async () => {
+      try {
+        setLoading(true)
+        setError('')
+
+        const response = await fetch(
+          `${API_URL}/api/cases/${encodeURIComponent(caseId)}`,
+        )
+
+        if (!response.ok) {
+          throw new Error(`Failed to load case. Status: ${response.status}`)
+        }
+
+        const data = await response.json()
+
+        setFormData({
+          caseId: data.case_id || '',
+          state: data.state || '',
+          district: data.district || '',
+          projectType: data.project_type || '',
+          landArea: data.land_area_acres ?? '',
+          landowners: data.number_of_landowners ?? '',
+          acquisitionStage: data.acquisition_stage || '',
+          objections: data.number_of_objections ?? '',
+          courtCases: data.number_of_court_cases ?? '',
+          compensation: data.compensation_completed_pct ?? '',
+          pendingApprovals: data.pending_approvals ?? '',
+          daysInCurrentStage: data.days_in_current_stage ?? '',
+          sanctionAmount: data.sanction_amount_lakh ?? '',
+          landAcquisitionAgency: data.land_acquisition_agency || '',
+          environmentalClearance: data.environmental_clearance || '',
+          forestClearance: data.forest_clearance || '',
+          relocationRequired: data.relocation_required || '',
+          structuresAffected: data.structures_affected ?? '',
+          disputeSeverity: data.dispute_severity || '',
+          paymentStatus: data.payment_status || '',
+          documentVerificationStatus:
+            data.document_verification_status || '',
+          projectLength: data.project_length_km ?? '',
+          lastReviewDaysAgo: data.last_review_days_ago ?? '',
+        })
+      } catch (err) {
+        console.error(err)
+        setError('Unable to load the case from the database.')
+      } finally {
+        setLoading(false)
+      }
+    }
+
+    if (caseId) {
+      fetchCase()
+    }
+  }, [caseId])
 
   const handleChange = (e) => {
     const { name, value } = e.target
@@ -67,11 +118,12 @@ const EditCase = () => {
   const handleSubmit = async (e) => {
     e.preventDefault()
 
-    setLoading(true)
+    setSaving(true)
     setError('')
 
     try {
-      const payload = {
+      // Data for ML prediction
+      const predictionPayload = {
         state: formData.state,
         district: formData.district,
         project_type: formData.projectType,
@@ -97,54 +149,89 @@ const EditCase = () => {
         last_review_days_ago: Number(formData.lastReviewDaysAgo),
       }
 
-      const response = await fetch(`${API_URL}/api/predict`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
+      // Step 1: Generate new prediction
+      const predictionResponse = await fetch(
+        `${API_URL}/api/predict`,
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify(predictionPayload),
         },
-        body: JSON.stringify(payload),
-      })
+      )
 
-      if (!response.ok) {
+      if (!predictionResponse.ok) {
         throw new Error('Prediction request failed.')
       }
 
-      const prediction = await response.json()
+      const prediction = await predictionResponse.json()
 
-      const updatedCase = {
-        ...formData,
-        predictedDelayDays: prediction.predicted_delay_days,
+      // Step 2: Update database
+      const updatePayload = {
+        ...predictionPayload,
+        predicted_delay_days: prediction.predicted_delay_days,
       }
 
-      dispatch({
-        type: 'UPDATE_CASE',
-        payload: {
-          index: Number(index),
-          updatedCase,
+      const updateResponse = await fetch(
+        `${API_URL}/api/cases/${encodeURIComponent(caseId)}`,
+        {
+          method: 'PUT',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify(updatePayload),
         },
-      })
+      )
 
-      alert('Case updated and prediction generated successfully!')
+      if (!updateResponse.ok) {
+        const errorData = await updateResponse.json().catch(() => null)
+
+        throw new Error(
+          errorData?.detail ||
+            `Case update failed. Status: ${updateResponse.status}`,
+        )
+      }
+
+      alert(
+        `Case ${caseId} updated successfully!\nNew predicted delay: ${prediction.predicted_delay_days} days`,
+      )
 
       navigate('/all-cases')
     } catch (err) {
       console.error(err)
       setError(
-        'Unable to generate prediction. Make sure the backend is running.'
+        err.message ||
+          'Unable to update the case. Make sure the backend is running.',
       )
     } finally {
-      setLoading(false)
+      setSaving(false)
     }
   }
 
-  if (!selectedCase) {
+  if (loading) {
+    return (
+      <CCard>
+        <CCardBody>
+          <h4>Loading case...</h4>
+        </CCardBody>
+      </CCard>
+    )
+  }
+
+  if (error && !formData.caseId) {
     return (
       <CCard>
         <CCardBody>
           <h4>Case not found.</h4>
 
-          <CButton color="primary" onClick={() => navigate('/dashboard')}>
-            Back to Dashboard
+          <p className="text-danger">{error}</p>
+
+          <CButton
+            color="primary"
+            onClick={() => navigate('/all-cases')}
+          >
+            Back to All Cases
           </CButton>
         </CCardBody>
       </CCard>
@@ -174,8 +261,7 @@ const EditCase = () => {
                   <CFormInput
                     name="caseId"
                     value={formData.caseId}
-                    onChange={handleChange}
-                    required
+                    disabled
                   />
                 </CCol>
 
@@ -343,7 +429,9 @@ const EditCase = () => {
                     <option value="District Administration">
                       District Administration
                     </option>
-                    <option value="Special LA Unit">Special LA Unit</option>
+                    <option value="Special LA Unit">
+                      Special LA Unit
+                    </option>
                   </CFormSelect>
                 </CCol>
 
@@ -487,10 +575,10 @@ const EditCase = () => {
                     color="primary"
                     type="submit"
                     className="me-2"
-                    disabled={loading}
+                    disabled={saving}
                   >
-                    {loading
-                      ? '⏳ Generating Prediction...'
+                    {saving
+                      ? '⏳ Updating...'
                       : '💾 Update Case & Prediction'}
                   </CButton>
 
@@ -512,4 +600,3 @@ const EditCase = () => {
 }
 
 export default EditCase
-

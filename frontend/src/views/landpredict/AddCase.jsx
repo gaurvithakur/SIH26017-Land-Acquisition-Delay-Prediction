@@ -66,6 +66,9 @@ const AddCase = () => {
     setLoading(true)
 
     try {
+      // --------------------------------------------------
+      // STEP 1: Prepare data for ML prediction
+      // --------------------------------------------------
       const requestData = {
         state: formData.state,
         district: formData.district,
@@ -91,7 +94,10 @@ const AddCase = () => {
         last_review_days_ago: Number(formData.lastReviewDaysAgo),
       }
 
-      const response = await fetch(`${API_URL}/api/predict`, {
+      // --------------------------------------------------
+      // STEP 2: Get prediction from ML model
+      // --------------------------------------------------
+      const predictionResponse = await fetch(`${API_URL}/api/predict`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -99,8 +105,8 @@ const AddCase = () => {
         body: JSON.stringify(requestData),
       })
 
-      if (!response.ok) {
-        const errorData = await response.json()
+      if (!predictionResponse.ok) {
+        const errorData = await predictionResponse.json()
 
         throw new Error(
           errorData.detail
@@ -109,24 +115,65 @@ const AddCase = () => {
         )
       }
 
-      const result = await response.json()
+      const predictionResult = await predictionResponse.json()
 
-      const predictedDelay = result.predicted_delay_days
+      const predictedDelay = predictionResult.predicted_delay_days
 
+      // --------------------------------------------------
+      // STEP 3: Prepare complete case data
+      // --------------------------------------------------
+      const caseData = {
+        case_id: formData.caseId,
+        ...requestData,
+        predicted_delay_days: predictedDelay,
+      }
+
+      // --------------------------------------------------
+      // STEP 4: Save case to PostgreSQL
+      // --------------------------------------------------
+      const saveResponse = await fetch(`${API_URL}/api/cases/`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(caseData),
+      })
+
+      if (!saveResponse.ok) {
+        const errorData = await saveResponse.json()
+
+        throw new Error(
+          errorData.detail
+            ? JSON.stringify(errorData.detail)
+            : 'Failed to save case',
+        )
+      }
+
+      const savedCase = await saveResponse.json()
+
+      // --------------------------------------------------
+      // STEP 5: Update Redux
+      // --------------------------------------------------
       dispatch({
         type: 'ADD_CASE',
         payload: {
           ...formData,
-          predictedDelayDays: predictedDelay,
+          predictedDelayDays: savedCase.predicted_delay_days,
         },
       })
 
+      // --------------------------------------------------
+      // STEP 6: Display prediction
+      // --------------------------------------------------
       setPrediction({
-        predictedDelayDays: predictedDelay,
+        predictedDelayDays: savedCase.predicted_delay_days,
       })
+
+      console.log('Case saved successfully:', savedCase)
     } catch (err) {
-      console.error('Prediction error:', err)
-      setError(err.message || 'Unable to connect to LANDPREDICT backend.')
+      console.error('Add case error:', err)
+
+      setError(err.message || 'Unable to save case.')
     } finally {
       setLoading(false)
     }
@@ -143,7 +190,7 @@ const AddCase = () => {
           <CCardBody>
             <CForm onSubmit={handleSubmit}>
               <CRow>
-
+                {/* Case ID */}
                 <CCol md={6}>
                   <CFormLabel>Case ID</CFormLabel>
                   <CFormInput
@@ -155,6 +202,7 @@ const AddCase = () => {
                   />
                 </CCol>
 
+                {/* State */}
                 <CCol md={6}>
                   <CFormLabel>State</CFormLabel>
                   <CFormInput
@@ -166,6 +214,7 @@ const AddCase = () => {
                   />
                 </CCol>
 
+                {/* District */}
                 <CCol md={6} className="mt-3">
                   <CFormLabel>District</CFormLabel>
                   <CFormInput
@@ -177,6 +226,7 @@ const AddCase = () => {
                   />
                 </CCol>
 
+                {/* Project Type */}
                 <CCol md={6} className="mt-3">
                   <CFormLabel>Project Type</CFormLabel>
                   <CFormInput
@@ -188,6 +238,7 @@ const AddCase = () => {
                   />
                 </CCol>
 
+                {/* Land Area */}
                 <CCol md={6} className="mt-3">
                   <CFormLabel>Land Area (Acres)</CFormLabel>
                   <CFormInput
@@ -200,6 +251,7 @@ const AddCase = () => {
                   />
                 </CCol>
 
+                {/* Landowners */}
                 <CCol md={6} className="mt-3">
                   <CFormLabel>Number of Landowners</CFormLabel>
                   <CFormInput
@@ -212,6 +264,7 @@ const AddCase = () => {
                   />
                 </CCol>
 
+                {/* Acquisition Stage */}
                 <CCol md={6} className="mt-3">
                   <CFormLabel>Acquisition Stage</CFormLabel>
                   <CFormSelect
@@ -229,6 +282,7 @@ const AddCase = () => {
                   </CFormSelect>
                 </CCol>
 
+                {/* Objections */}
                 <CCol md={6} className="mt-3">
                   <CFormLabel>Number of Objections</CFormLabel>
                   <CFormInput
@@ -241,6 +295,7 @@ const AddCase = () => {
                   />
                 </CCol>
 
+                {/* Court Cases */}
                 <CCol md={6} className="mt-3">
                   <CFormLabel>Number of Court Cases</CFormLabel>
                   <CFormInput
@@ -253,6 +308,7 @@ const AddCase = () => {
                   />
                 </CCol>
 
+                {/* Compensation */}
                 <CCol md={6} className="mt-3">
                   <CFormLabel>Compensation Completed (%)</CFormLabel>
                   <CFormInput
@@ -266,6 +322,7 @@ const AddCase = () => {
                   />
                 </CCol>
 
+                {/* Pending Approvals */}
                 <CCol md={6} className="mt-3">
                   <CFormLabel>Pending Approvals</CFormLabel>
                   <CFormInput
@@ -278,6 +335,7 @@ const AddCase = () => {
                   />
                 </CCol>
 
+                {/* Days in Current Stage */}
                 <CCol md={6} className="mt-3">
                   <CFormLabel>Days in Current Stage</CFormLabel>
                   <CFormInput
@@ -290,6 +348,7 @@ const AddCase = () => {
                   />
                 </CCol>
 
+                {/* Sanction Amount */}
                 <CCol md={6} className="mt-3">
                   <CFormLabel>Sanction Amount (Lakh)</CFormLabel>
                   <CFormInput
@@ -302,6 +361,7 @@ const AddCase = () => {
                   />
                 </CCol>
 
+                {/* Land Acquisition Agency */}
                 <CCol md={6} className="mt-3">
                   <CFormLabel>Land Acquisition Agency</CFormLabel>
                   <CFormSelect
@@ -320,6 +380,7 @@ const AddCase = () => {
                   </CFormSelect>
                 </CCol>
 
+                {/* Environmental Clearance */}
                 <CCol md={6} className="mt-3">
                   <CFormLabel>Environmental Clearance</CFormLabel>
                   <CFormSelect
@@ -335,6 +396,7 @@ const AddCase = () => {
                   </CFormSelect>
                 </CCol>
 
+                {/* Forest Clearance */}
                 <CCol md={6} className="mt-3">
                   <CFormLabel>Forest Clearance</CFormLabel>
                   <CFormSelect
@@ -350,6 +412,7 @@ const AddCase = () => {
                   </CFormSelect>
                 </CCol>
 
+                {/* Relocation */}
                 <CCol md={6} className="mt-3">
                   <CFormLabel>Relocation Required</CFormLabel>
                   <CFormSelect
@@ -364,6 +427,7 @@ const AddCase = () => {
                   </CFormSelect>
                 </CCol>
 
+                {/* Structures */}
                 <CCol md={6} className="mt-3">
                   <CFormLabel>Structures Affected</CFormLabel>
                   <CFormInput
@@ -376,6 +440,7 @@ const AddCase = () => {
                   />
                 </CCol>
 
+                {/* Dispute Severity */}
                 <CCol md={6} className="mt-3">
                   <CFormLabel>Dispute Severity</CFormLabel>
                   <CFormSelect
@@ -391,6 +456,7 @@ const AddCase = () => {
                   </CFormSelect>
                 </CCol>
 
+                {/* Payment Status */}
                 <CCol md={6} className="mt-3">
                   <CFormLabel>Payment Status</CFormLabel>
                   <CFormSelect
@@ -406,6 +472,7 @@ const AddCase = () => {
                   </CFormSelect>
                 </CCol>
 
+                {/* Document Verification */}
                 <CCol md={6} className="mt-3">
                   <CFormLabel>Document Verification</CFormLabel>
                   <CFormSelect
@@ -421,6 +488,7 @@ const AddCase = () => {
                   </CFormSelect>
                 </CCol>
 
+                {/* Project Length */}
                 <CCol md={6} className="mt-3">
                   <CFormLabel>Project Length (km)</CFormLabel>
                   <CFormInput
@@ -433,6 +501,7 @@ const AddCase = () => {
                   />
                 </CCol>
 
+                {/* Last Review */}
                 <CCol md={6} className="mt-3">
                   <CFormLabel>Last Review (Days Ago)</CFormLabel>
                   <CFormInput
@@ -445,6 +514,7 @@ const AddCase = () => {
                   />
                 </CCol>
 
+                {/* Submit */}
                 <CCol xs={12} className="mt-4">
                   <CButton
                     color="primary"
@@ -452,19 +522,20 @@ const AddCase = () => {
                     type="submit"
                     disabled={loading}
                   >
-                    {loading ? 'Predicting...' : 'Predict Delay'}
+                    {loading ? 'Saving...' : 'Predict & Save Case'}
                   </CButton>
                 </CCol>
-
               </CRow>
             </CForm>
 
+            {/* Error */}
             {error && (
               <CAlert color="danger" className="mt-4">
-                <strong>Prediction Error:</strong> {error}
+                <strong>Error:</strong> {error}
               </CAlert>
             )}
 
+            {/* Prediction Result */}
             {prediction && (
               <CCard className="mt-4">
                 <CCardHeader>
@@ -483,7 +554,7 @@ const AddCase = () => {
 
                     <p className="text-muted mb-0">
                       Prediction generated by the LANDPREDICT machine-learning
-                      model.
+                      model and the case has been saved successfully.
                     </p>
                   </div>
                 </CCardBody>
