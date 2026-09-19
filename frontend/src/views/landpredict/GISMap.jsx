@@ -15,7 +15,7 @@ import { CircleMarker, MapContainer, Popup, TileLayer } from 'react-leaflet'
 
 import 'leaflet/dist/leaflet.css'
 
-const API_URL = 'http://127.0.0.1:8000'
+import { apiFetch } from '../../api'
 
 // ==========================================
 // Approximate coordinates of Indian states
@@ -104,7 +104,8 @@ const GISMap = () => {
   const [error, setError] = useState('')
 
   // ==========================================
-  // Load cases from PostgreSQL through API
+  // Load cases from PostgreSQL through
+  // authenticated FastAPI
   // ==========================================
 
   const loadCases = async () => {
@@ -112,7 +113,7 @@ const GISMap = () => {
       setLoading(true)
       setError('')
 
-      const response = await fetch(`${API_URL}/api/cases/`)
+      const response = await apiFetch('/api/cases/')
 
       if (!response.ok) {
         throw new Error('Failed to load cases from backend')
@@ -123,7 +124,11 @@ const GISMap = () => {
       setCases(data)
     } catch (err) {
       console.error('GIS map error:', err)
-      setError('Unable to load land acquisition cases.')
+
+      if (err.message !== 'Not authenticated') {
+        setError('Unable to load land acquisition cases.')
+      }
+
       setCases([])
     } finally {
       setLoading(false)
@@ -167,6 +172,7 @@ const GISMap = () => {
 
             <CCardBody className="text-center py-5">
               <CSpinner />
+
               <p className="text-body-secondary mt-3 mb-0">
                 Loading land acquisition cases...
               </p>

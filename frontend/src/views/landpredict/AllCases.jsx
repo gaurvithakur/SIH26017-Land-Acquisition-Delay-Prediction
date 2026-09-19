@@ -20,7 +20,7 @@ import {
   CTableRow,
 } from '@coreui/react'
 
-const API_URL = 'http://127.0.0.1:8000'
+import { apiFetch } from '../../api'
 
 const AllCases = () => {
   const dispatch = useDispatch()
@@ -31,13 +31,13 @@ const AllCases = () => {
   const [error, setError] = useState('')
   const [search, setSearch] = useState('')
 
-  // Load cases from PostgreSQL through FastAPI
+  // Load cases from PostgreSQL through authenticated FastAPI
   const fetchCases = async () => {
     try {
       setLoading(true)
       setError('')
 
-      const response = await fetch(`${API_URL}/api/cases/`)
+      const response = await apiFetch('/api/cases/')
 
       if (!response.ok) {
         throw new Error(`Failed to load cases. Status: ${response.status}`)
@@ -54,7 +54,11 @@ const AllCases = () => {
       })
     } catch (err) {
       console.error('Error loading cases:', err)
-      setError('Unable to load cases from the server.')
+
+      // apiFetch already handles 401/session expiry
+      if (err.message !== 'Not authenticated') {
+        setError('Unable to load cases from the server.')
+      }
     } finally {
       setLoading(false)
     }
@@ -78,16 +82,21 @@ const AllCases = () => {
 
   // Delete case from database
   const handleDelete = async (caseId) => {
-    const confirmDelete = window.confirm(`Are you sure you want to delete case ${caseId}?`)
+    const confirmDelete = window.confirm(
+      `Are you sure you want to delete case ${caseId}?`,
+    )
 
     if (!confirmDelete) {
       return
     }
 
     try {
-      const response = await fetch(`${API_URL}/api/cases/${encodeURIComponent(caseId)}`, {
-        method: 'DELETE',
-      })
+      const response = await apiFetch(
+        `/api/cases/${encodeURIComponent(caseId)}`,
+        {
+          method: 'DELETE',
+        },
+      )
 
       if (!response.ok) {
         throw new Error(`Delete failed. Status: ${response.status}`)
@@ -96,7 +105,10 @@ const AllCases = () => {
       await fetchCases()
     } catch (err) {
       console.error('Error deleting case:', err)
-      alert('Unable to delete the case.')
+
+      if (err.message !== 'Not authenticated') {
+        alert('Unable to delete the case.')
+      }
     }
   }
 
@@ -107,7 +119,9 @@ const AllCases = () => {
         <CCol>
           <h2 className="fw-bold">All Land Acquisition Cases</h2>
 
-          <p className="text-body-secondary">View, search and manage all LANDPREDICT cases.</p>
+          <p className="text-body-secondary">
+            View, search and manage all LANDPREDICT cases.
+          </p>
         </CCol>
       </CRow>
 
@@ -144,7 +158,9 @@ const AllCases = () => {
                 <div className="text-center py-5">
                   <CSpinner />
 
-                  <p className="mt-3 text-body-secondary">Loading cases from database...</p>
+                  <p className="mt-3 text-body-secondary">
+                    Loading cases from database...
+                  </p>
                 </div>
               ) : cases.length === 0 ? (
                 /* No cases */
@@ -152,10 +168,14 @@ const AllCases = () => {
                   <h5>No cases added yet.</h5>
 
                   <p className="text-body-secondary">
-                    Add your first land acquisition case to start managing predictions.
+                    Add your first land acquisition case to start managing
+                    predictions.
                   </p>
 
-                  <CButton color="primary" onClick={() => navigate('/add-case')}>
+                  <CButton
+                    color="primary"
+                    onClick={() => navigate('/add-case')}
+                  >
                     ➕ Add New Case
                   </CButton>
                 </div>
@@ -164,9 +184,14 @@ const AllCases = () => {
                 <div className="text-center py-5">
                   <h5>No matching cases found.</h5>
 
-                  <p className="text-body-secondary">Try changing your search.</p>
+                  <p className="text-body-secondary">
+                    Try changing your search.
+                  </p>
 
-                  <CButton color="secondary" onClick={() => setSearch('')}>
+                  <CButton
+                    color="secondary"
+                    onClick={() => setSearch('')}
+                  >
                     Clear Search
                   </CButton>
                 </div>
@@ -181,7 +206,9 @@ const AllCases = () => {
                       <CTableHeaderCell>Project Type</CTableHeaderCell>
                       <CTableHeaderCell>Predicted Delay</CTableHeaderCell>
 
-                      <CTableHeaderCell className="text-center">Actions</CTableHeaderCell>
+                      <CTableHeaderCell className="text-center">
+                        Actions
+                      </CTableHeaderCell>
                     </CTableRow>
                   </CTableHead>
 
@@ -211,7 +238,13 @@ const AllCases = () => {
                             <CButton
                               color="info"
                               size="sm"
-                              onClick={() => navigate(`/view-case/${item.case_id}`)}
+                              onClick={() =>
+                                navigate(
+                                  `/view-case/${encodeURIComponent(
+                                    item.case_id,
+                                  )}`,
+                                )
+                              }
                             >
                               👁️ View
                             </CButton>
@@ -220,7 +253,13 @@ const AllCases = () => {
                             <CButton
                               color="primary"
                               size="sm"
-                              onClick={() => navigate(`/edit-case/${item.case_id}`)}
+                              onClick={() =>
+                                navigate(
+                                  `/edit-case/${encodeURIComponent(
+                                    item.case_id,
+                                  )}`,
+                                )
+                              }
                             >
                               ✏️ Edit
                             </CButton>
