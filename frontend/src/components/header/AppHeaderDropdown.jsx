@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react'
+import React from 'react'
 import { useNavigate } from 'react-router-dom'
 
 import {
@@ -12,131 +12,84 @@ import {
   CDropdownToggle,
 } from '@coreui/react'
 
+import CIcon from '@coreui/icons-react'
+
 import {
   cilBell,
   cilCreditCard,
-  cilCommentSquare,
-  cilEnvelopeOpen,
-  cilFile,
   cilLockLocked,
   cilSettings,
-  cilTask,
   cilUser,
 } from '@coreui/icons'
 
-import CIcon from '@coreui/icons-react'
-
-import avatar8 from './../../assets/images/avatars/8.jpg'
-
-const API_URL = 'http://127.0.0.1:8000'
-
-const AppHeaderDropdown = () => {
+const AppHeaderDropdown = ({ alerts = [], onAlertClick }) => {
   const navigate = useNavigate()
 
-  const [alerts, setAlerts] = useState([])
-  const [loadingAlerts, setLoadingAlerts] = useState(false)
+  // =========================================================
+  // GET LOGGED-IN USER
+  // =========================================================
+  const storedUser = localStorage.getItem('user')
+  const sessionUser = sessionStorage.getItem('user')
 
-  // ==================== LOAD CASE ALERTS ====================
-  const loadAlerts = async () => {
-    setLoadingAlerts(true)
+  let user = null
 
-    try {
-      const response = await fetch(`${API_URL}/api/cases/`)
-      const cases = await response.json()
-
-      if (!response.ok) {
-        throw new Error('Failed to load alerts')
-      }
-
-      const caseAlerts = cases
-        .map((item) => {
-          const delay = Number(item.predicted_delay_days) || 0
-
-          if (delay >= 120) {
-            return {
-              caseId: item.case_id,
-              delay,
-              type: 'high',
-              title: 'High Delay Alert',
-              message: `${item.case_id} has a predicted delay of ${delay.toFixed(2)} days.`,
-            }
-          }
-
-          if (delay >= 60) {
-            return {
-              caseId: item.case_id,
-              delay,
-              type: 'moderate',
-              title: 'Moderate Delay Alert',
-              message: `${item.case_id} has a predicted delay of ${delay.toFixed(2)} days.`,
-            }
-          }
-
-          return null
-        })
-        .filter(Boolean)
-        .sort((a, b) => b.delay - a.delay)
-
-      setAlerts(caseAlerts)
-    } catch (error) {
-      console.error('Unable to load alerts:', error)
-      setAlerts([])
-    } finally {
-      setLoadingAlerts(false)
-    }
+  try {
+    user = storedUser
+      ? JSON.parse(storedUser)
+      : sessionUser
+        ? JSON.parse(sessionUser)
+        : null
+  } catch {
+    user = null
   }
 
-  // Load alerts when dropdown component starts
-  useEffect(() => {
-    loadAlerts()
-
-    // Refresh alerts every 30 seconds
-    const interval = setInterval(loadAlerts, 30000)
-
-    return () => clearInterval(interval)
-  }, [])
-
-  // ==================== OPEN CASE ====================
-  const handleAlertClick = (caseId) => {
-    navigate(`/view-case/${encodeURIComponent(caseId)}`)
-  }
-
-  // ==================== LOCK ACCOUNT / LOGOUT ====================
-  const handleLockAccount = () => {
-    localStorage.removeItem('access_token')
-    localStorage.removeItem('user')
-
-    sessionStorage.removeItem('access_token')
-    sessionStorage.removeItem('user')
-
-    navigate('/authentication/login', { replace: true })
-  }
+  const userName = user?.name || 'User'
+  const userEmail = user?.email || ''
 
   return (
-    <CDropdown variant="nav-item">
+    <CDropdown variant="nav-item" placement="bottom-end">
 
+      {/* =====================================================
+          AVATAR
+      ====================================================== */}
       <CDropdownToggle
-        placement="bottom-end"
-        className="py-0 pe-0"
         caret={false}
+        className="py-0 pe-0"
       >
-        <CAvatar src={avatar8} size="md" />
+        <CAvatar
+          color="primary"
+          textColor="white"
+          size="md"
+        >
+          {userName.charAt(0).toUpperCase()}
+        </CAvatar>
       </CDropdownToggle>
 
-      <CDropdownMenu
-        className="pt-0"
-        placement="bottom-end"
-        style={{ minWidth: '340px' }}
-      >
+      {/* =====================================================
+          USER DROPDOWN
+      ====================================================== */}
+      <CDropdownMenu className="pt-0">
 
-        {/* ==================== ACCOUNT ==================== */}
-        <CDropdownHeader className="bg-body-secondary fw-semibold mb-2">
-          Account
+        {/* User information */}
+        <CDropdownHeader className="bg-body-secondary fw-semibold py-2">
+
+          <div>
+            {userName}
+          </div>
+
+          {userEmail && (
+            <small className="text-body-secondary">
+              {userEmail}
+            </small>
+          )}
+
         </CDropdownHeader>
 
-        {/* ==================== REAL ALERTS ==================== */}
+        {/* =================================================
+            UPDATES
+        ================================================== */}
         <CDropdownHeader className="fw-semibold">
-          <CIcon icon={cilBell} className="me-2" />
+
           Updates
 
           <CBadge
@@ -145,35 +98,48 @@ const AppHeaderDropdown = () => {
           >
             {alerts.length}
           </CBadge>
+
         </CDropdownHeader>
 
-        {loadingAlerts ? (
+        {/* No notifications */}
+        {alerts.length === 0 ? (
+
           <CDropdownItem disabled>
-            Loading alerts...
+
+            <CIcon
+              icon={cilBell}
+              className="me-2"
+            />
+
+            No new updates
+
           </CDropdownItem>
-        ) : alerts.length === 0 ? (
-          <CDropdownItem disabled>
-            <span className="text-body-secondary">
-              No delay alerts
-            </span>
-          </CDropdownItem>
+
         ) : (
-          alerts.map((alert) => (
+
+          /* Notifications */
+          alerts.slice(0, 5).map((alert) => (
+
             <CDropdownItem
               key={`${alert.caseId}-${alert.type}`}
-              onClick={() => handleAlertClick(alert.caseId)}
-              style={{ cursor: 'pointer' }}
+              onClick={() => onAlertClick?.(alert.caseId)}
+              style={{
+                cursor: 'pointer',
+                whiteSpace: 'normal',
+              }}
             >
+
               <CIcon
                 icon={cilBell}
-                className={`me-2 text-${
+                className={`me-2 ${
                   alert.type === 'high'
-                    ? 'danger'
-                    : 'warning'
+                    ? 'text-danger'
+                    : 'text-warning'
                 }`}
               />
 
               <span>
+
                 <strong>
                   {alert.title}
                 </strong>
@@ -183,78 +149,92 @@ const AppHeaderDropdown = () => {
                 <small className="text-body-secondary">
                   {alert.message}
                 </small>
+
               </span>
+
             </CDropdownItem>
+
           ))
+
         )}
 
-        {/* ==================== OTHER ITEMS ==================== */}
+        {/* View all */}
+        {alerts.length > 0 && (
+
+          <>
+            <CDropdownDivider />
+
+            <CDropdownItem
+              onClick={() => navigate('/high-risk-cases')}
+              style={{ cursor: 'pointer' }}
+            >
+
+              <CIcon
+                icon={cilBell}
+                className="me-2"
+              />
+
+              View all updates
+
+            </CDropdownItem>
+          </>
+
+        )}
+
         <CDropdownDivider />
 
-        <CDropdownItem href="#">
-          <CIcon icon={cilEnvelopeOpen} className="me-2" />
-          Messages
-          <CBadge color="success" className="ms-2">
-            0
-          </CBadge>
-        </CDropdownItem>
+        {/* Profile */}
+        <CDropdownItem>
 
-        <CDropdownItem href="#">
-          <CIcon icon={cilTask} className="me-2" />
-          Tasks
-          <CBadge color="danger" className="ms-2">
-            0
-          </CBadge>
-        </CDropdownItem>
+          <CIcon
+            icon={cilUser}
+            className="me-2"
+          />
 
-        <CDropdownItem href="#">
-          <CIcon icon={cilCommentSquare} className="me-2" />
-          Comments
-          <CBadge color="warning" className="ms-2">
-            0
-          </CBadge>
-        </CDropdownItem>
-
-        {/* ==================== SETTINGS ==================== */}
-        <CDropdownHeader className="bg-body-secondary fw-semibold my-2">
-          Settings
-        </CDropdownHeader>
-
-        <CDropdownItem href="#">
-          <CIcon icon={cilUser} className="me-2" />
           Profile
+
         </CDropdownItem>
 
-        <CDropdownItem href="#">
-          <CIcon icon={cilSettings} className="me-2" />
+        {/* Settings */}
+        <CDropdownItem>
+
+          <CIcon
+            icon={cilSettings}
+            className="me-2"
+          />
+
           Settings
+
         </CDropdownItem>
 
-        <CDropdownItem href="#">
-          <CIcon icon={cilCreditCard} className="me-2" />
+        {/* Payments */}
+        <CDropdownItem>
+
+          <CIcon
+            icon={cilCreditCard}
+            className="me-2"
+          />
+
           Payments
-          <CBadge color="secondary" className="ms-2">
-            0
-          </CBadge>
-        </CDropdownItem>
 
-        <CDropdownItem href="#">
-          <CIcon icon={cilFile} className="me-2" />
-          Projects
-          <CBadge color="primary" className="ms-2">
-            0
-          </CBadge>
         </CDropdownItem>
 
         <CDropdownDivider />
 
-        {/* ==================== LOCK ACCOUNT ==================== */}
-        <CDropdownItem onClick={handleLockAccount}>
-          <CIcon icon={cilLockLocked} className="me-2" />
+        {/* Lock */}
+        <CDropdownItem>
+
+          <CIcon
+            icon={cilLockLocked}
+            className="me-2"
+          />
+
           Lock Account
+
         </CDropdownItem>
 
       </CDropdownMenu>
+
     </CDropdown>
   )
 }

@@ -54,13 +54,13 @@ const AppHeader = () => {
   const headerRef = useRef()
   const navigate = useNavigate()
 
-  const { colorMode, setColorMode } = useColorModes(
-    'coreui-free-react-admin-template-theme',
-  )
+  const { colorMode, setColorMode } = useColorModes('coreui-free-react-admin-template-theme')
 
   const [searchVisible, setSearchVisible] = useState(false)
 
-  // Notification state
+  // =========================================================
+  // NOTIFICATION STATE
+  // =========================================================
   const [alerts, setAlerts] = useState([])
   const [loadingAlerts, setLoadingAlerts] = useState(false)
 
@@ -92,9 +92,7 @@ const AppHeader = () => {
               delay,
               type: 'high',
               title: 'High Delay Alert',
-              message: `${item.case_id} has a predicted delay of ${delay.toFixed(
-                2,
-              )} days.`,
+              message: `${item.case_id} has a predicted delay of ${delay.toFixed(2)} days.`,
             }
           }
 
@@ -105,9 +103,7 @@ const AppHeader = () => {
               delay,
               type: 'moderate',
               title: 'Moderate Delay Alert',
-              message: `${item.case_id} has a predicted delay of ${delay.toFixed(
-                2,
-              )} days.`,
+              message: `${item.case_id} has a predicted delay of ${delay.toFixed(2)} days.`,
             }
           }
 
@@ -118,7 +114,6 @@ const AppHeader = () => {
 
       setAlerts(caseAlerts)
     } catch (error) {
-      console.error('Unable to load notifications:', error)
       setAlerts([])
     } finally {
       setLoadingAlerts(false)
@@ -144,10 +139,7 @@ const AppHeader = () => {
   useEffect(() => {
     const handleScroll = () => {
       if (headerRef.current) {
-        headerRef.current.classList.toggle(
-          'shadow-sm',
-          document.documentElement.scrollTop > 0,
-        )
+        headerRef.current.classList.toggle('shadow-sm', document.documentElement.scrollTop > 0)
       }
     }
 
@@ -195,22 +187,13 @@ const AppHeader = () => {
           aria-labelledby="app-header-search-modal-title"
         >
           <CModalHeader>
-            <CModalTitle
-              id="app-header-search-modal-title"
-              className="w-100"
-            >
-              <CFormInput
-                type="search"
-                placeholder="Search"
-                aria-label="Search"
-              />
+            <CModalTitle id="app-header-search-modal-title" className="w-100">
+              <CFormInput type="search" placeholder="Search" aria-label="Search" />
             </CModalTitle>
           </CModalHeader>
 
           <CModalBody>
-            <p className="text-body-secondary small mb-2">
-              Recent searches
-            </p>
+            <p className="text-body-secondary small mb-2">Recent searches</p>
 
             <CListGroup flush>
               <CListGroupItem
@@ -219,7 +202,6 @@ const AppHeader = () => {
                 className="d-flex justify-content-between align-items-center"
               >
                 CoreUI components overview
-
                 <CBadge color="secondary" shape="rounded-pill">
                   Open
                 </CBadge>
@@ -231,7 +213,6 @@ const AppHeader = () => {
                 className="d-flex justify-content-between align-items-center"
               >
                 Modal dialog examples
-
                 <CBadge color="secondary" shape="rounded-pill">
                   Open
                 </CBadge>
@@ -243,7 +224,6 @@ const AppHeader = () => {
                 className="d-flex justify-content-between align-items-center"
               >
                 Sidebar navigation customization
-
                 <CBadge color="secondary" shape="rounded-pill">
                   Open
                 </CBadge>
@@ -252,15 +232,13 @@ const AppHeader = () => {
           </CModalBody>
         </CModal>
 
-        {/* Right-side header icons */}
+        {/* =====================================================
+            RIGHT SIDE HEADER ICONS
+        ====================================================== */}
         <CHeaderNav className="ms-auto">
           {/* Notifications */}
           <CDropdown variant="nav-item" placement="bottom-end">
-            <CDropdownToggle
-              caret={false}
-              className="position-relative"
-              title="Notifications"
-            >
+            <CDropdownToggle caret={false} className="position-relative" title="Notifications">
               <CIcon icon={cilBell} size="lg" />
 
               {alerts.length > 0 && (
@@ -274,30 +252,18 @@ const AppHeader = () => {
               )}
             </CDropdownToggle>
 
-            <CDropdownMenu
-              className="pt-0"
-              placement="bottom-end"
-              style={{ minWidth: '360px' }}
-            >
+            <CDropdownMenu className="pt-0" placement="bottom-end" style={{ minWidth: '360px' }}>
               <CDropdownHeader className="bg-body-secondary fw-semibold">
                 Notifications
-
-                <CBadge
-                  color={alerts.length > 0 ? 'danger' : 'secondary'}
-                  className="ms-2"
-                >
+                <CBadge color={alerts.length > 0 ? 'danger' : 'secondary'} className="ms-2">
                   {alerts.length}
                 </CBadge>
               </CDropdownHeader>
 
               {loadingAlerts ? (
-                <CDropdownItem disabled>
-                  Loading notifications...
-                </CDropdownItem>
+                <CDropdownItem disabled>Loading notifications...</CDropdownItem>
               ) : alerts.length === 0 ? (
-                <CDropdownItem disabled>
-                  No delay alerts
-                </CDropdownItem>
+                <CDropdownItem disabled>No delay alerts</CDropdownItem>
               ) : (
                 alerts.map((alert) => (
                   <CDropdownItem
@@ -310,11 +276,7 @@ const AppHeader = () => {
                   >
                     <CIcon
                       icon={cilBell}
-                      className={`me-2 ${
-                        alert.type === 'high'
-                          ? 'text-danger'
-                          : 'text-warning'
-                      }`}
+                      className={`me-2 ${alert.type === 'high' ? 'text-danger' : 'text-warning'}`}
                     />
 
                     <span>
@@ -322,23 +284,23 @@ const AppHeader = () => {
 
                       <br />
 
-                      <small className="text-body-secondary">
-                        {alert.message}
-                      </small>
+                      <small className="text-body-secondary">{alert.message}</small>
                     </span>
                   </CDropdownItem>
                 ))
               )}
 
-              {alerts.length > 0 && <CDropdownDivider />}
-
               {alerts.length > 0 && (
-                <CDropdownItem
-                  onClick={() => navigate('/high-risk-cases')}
-                  style={{ cursor: 'pointer' }}
-                >
-                  View all high-risk cases
-                </CDropdownItem>
+                <>
+                  <CDropdownDivider />
+
+                  <CDropdownItem
+                    onClick={() => navigate('/high-risk-cases')}
+                    style={{ cursor: 'pointer' }}
+                  >
+                    View all high-risk cases
+                  </CDropdownItem>
+                </>
               )}
             </CDropdownMenu>
           </CDropdown>
@@ -358,7 +320,9 @@ const AppHeader = () => {
           </CNavItem>
         </CHeaderNav>
 
-        {/* Theme + User */}
+        {/* =====================================================
+            THEME + USER
+        ====================================================== */}
         <CHeaderNav>
           <li className="nav-item py-1">
             <div className="vr h-100 mx-2 text-body text-opacity-75"></div>
@@ -384,11 +348,7 @@ const AppHeader = () => {
                 type="button"
                 onClick={() => setColorMode('light')}
               >
-                <CIcon
-                  className="me-2"
-                  icon={cilSun}
-                  size="lg"
-                />
+                <CIcon className="me-2" icon={cilSun} size="lg" />
                 Light
               </CDropdownItem>
 
@@ -399,11 +359,7 @@ const AppHeader = () => {
                 type="button"
                 onClick={() => setColorMode('dark')}
               >
-                <CIcon
-                  className="me-2"
-                  icon={cilMoon}
-                  size="lg"
-                />
+                <CIcon className="me-2" icon={cilMoon} size="lg" />
                 Dark
               </CDropdownItem>
 
@@ -414,11 +370,7 @@ const AppHeader = () => {
                 type="button"
                 onClick={() => setColorMode('auto')}
               >
-                <CIcon
-                  className="me-2"
-                  icon={cilContrast}
-                  size="lg"
-                />
+                <CIcon className="me-2" icon={cilContrast} size="lg" />
                 Auto
               </CDropdownItem>
             </CDropdownMenu>
@@ -428,8 +380,10 @@ const AppHeader = () => {
             <div className="vr h-100 mx-2 text-body text-opacity-75"></div>
           </li>
 
-          {/* User dropdown */}
-          <AppHeaderDropdown />
+          {/* =================================================
+              USER / AVATAR DROPDOWN
+          ================================================== */}
+          <AppHeaderDropdown alerts={alerts} onAlertClick={handleAlertClick} />
         </CHeaderNav>
       </CContainer>
 
