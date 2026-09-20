@@ -34,3 +34,4 @@ Thumbs.db
 # data/processed/*
 # Local database backup
 landpredict_backup.dump
+landpredict_supabase.sql
