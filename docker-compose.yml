@@ -12,5 +12,33 @@ services:
     volumes:
       - postgres_data:/var/lib/postgresql/data
 
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: landpredict-backend
+    restart: unless-stopped
+    environment:
+      DATABASE_URL: postgresql+psycopg2://landpredict:landpredict123@postgres:5432/landpredict
+    depends_on:
+      - postgres
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./models:/models
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+      args:
+        VITE_API_URL: http://localhost:8000
+    container_name: landpredict-frontend
+    restart: unless-stopped
+    depends_on:
+      - backend
+    ports:
+      - "3000:80"
+
 volumes:
   postgres_data:
