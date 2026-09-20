@@ -13,6 +13,7 @@ import React from 'react'
 // Dashboard
 // =========================
 const Dashboard = React.lazy(() => import('./views/dashboard/Dashboard'))
+const ModelInsights = React.lazy(() => import('./views/model-insights/ModelInsights'))
 
 // =========================
 // LANDPREDICT
@@ -40,7 +41,6 @@ const Chip = React.lazy(() => import('./views/components/chip/Chip'))
 const ChipSet = React.lazy(() => import('./views/components/chip-set/ChipSet'))
 const Collapses = React.lazy(() => import('./views/components/collapse/Collapse'))
 const Dropdowns = React.lazy(() => import('./views/components/dropdowns/Dropdowns'))
-const ListGroups = React.lazy(() => import('./views/components/list-group/ListGroup'))
 const Modals = React.lazy(() => import('./views/components/modals/Modals'))
 const Navs = React.lazy(() => import('./views/components/navs-tabs/NavsTabs'))
 const Paginations = React.lazy(() => import('./views/components/pagination/Pagination'))
@@ -105,6 +105,11 @@ export const routes = [
     name: 'Dashboard',
     element: Dashboard,
   },
+  {
+    path: '/model-insights',
+    name: 'Model Insights',
+    element: ModelInsights,
+  },
 
   // =========================
   // LANDPREDICT ROUTES
@@ -134,15 +139,11 @@ export const routes = [
     name: 'GIS Map',
     element: GISMap,
   },
-
-  // View case
   {
     path: '/view-case/:caseId',
     name: 'View Case',
     element: ViewCase,
   },
-
-  // Edit case
   {
     path: '/edit-case/:caseId',
     name: 'Edit Case',
@@ -152,15 +153,11 @@ export const routes = [
   // =========================
   // ALERTS
   // =========================
-
-  // Main Alerts page used by the LANDPREDICT sidebar
   {
     path: '/alerts',
     name: 'Alerts',
     element: Alerts,
   },
-
-  // Original CoreUI Alerts component route
   {
     path: '/components/alerts',
     name: 'Alerts Component',
@@ -230,11 +227,6 @@ export const routes = [
     path: '/components/dropdowns',
     name: 'Dropdowns',
     element: Dropdowns,
-  },
-  {
-    path: '/components/list-group',
-    name: 'List Groups',
-    element: ListGroups,
   },
   {
     path: '/components/modals',

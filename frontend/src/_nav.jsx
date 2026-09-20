@@ -78,6 +78,14 @@ const _nav = [
     icon: <CIcon icon={cilWarning} customClassName="nav-icon" />,
   },
 
+  // Model Insights
+  {
+    component: CNavItem,
+    name: 'Model Insights',
+    to: '/model-insights',
+    icon: <CIcon icon={cilChartPie} customClassName="nav-icon" />,
+  },
+
   // =========================
   // MONITORING
   // =========================
