@@ -1,15 +1,71 @@
 from datetime import datetime
 
-from sqlalchemy import Boolean, DateTime, Float, Integer, String
-from sqlalchemy.orm import Mapped, mapped_column
+from sqlalchemy import Boolean, DateTime, Float, ForeignKey, Integer, String
+from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.db.database import Base
+
+
+class User(Base):
+    __tablename__ = "users"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, index=True)
+
+    name: Mapped[str] = mapped_column(
+        String(100),
+        nullable=False,
+    )
+
+    email: Mapped[str] = mapped_column(
+        String(150),
+        unique=True,
+        index=True,
+        nullable=False,
+    )
+
+    password_hash: Mapped[str] = mapped_column(
+        String(255),
+        nullable=False,
+    )
+
+    role: Mapped[str] = mapped_column(
+        String(50),
+        default="user",
+        nullable=False,
+    )
+
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime,
+        default=datetime.utcnow,
+        nullable=False,
+    )
+
+    cases: Mapped[list["Case"]] = relationship(
+        "Case",
+        back_populates="user",
+        cascade="all, delete-orphan",
+    )
 
 
 class Case(Base):
     __tablename__ = "cases"
 
-    id: Mapped[int] = mapped_column(Integer, primary_key=True, index=True)
+    id: Mapped[int] = mapped_column(
+        Integer,
+        primary_key=True,
+        index=True,
+    )
+
+    user_id: Mapped[int] = mapped_column(
+        ForeignKey("users.id", ondelete="CASCADE"),
+        nullable=False,
+        index=True,
+    )
+
+    user: Mapped["User"] = relationship(
+        "User",
+        back_populates="cases",
+    )
 
     case_id: Mapped[str] = mapped_column(
         String(100),
@@ -59,7 +115,10 @@ class Case(Base):
         nullable=False,
     )
 
-    structures_affected: Mapped[int] = mapped_column(Integer, nullable=False)
+    structures_affected: Mapped[int] = mapped_column(
+        Integer,
+        nullable=False,
+    )
 
     dispute_severity: Mapped[str] = mapped_column(
         String(50),
@@ -76,9 +135,15 @@ class Case(Base):
         nullable=False,
     )
 
-    project_length_km: Mapped[float] = mapped_column(Float, nullable=False)
+    project_length_km: Mapped[float] = mapped_column(
+        Float,
+        nullable=False,
+    )
 
-    last_review_days_ago: Mapped[int] = mapped_column(Integer, nullable=False)
+    last_review_days_ago: Mapped[int] = mapped_column(
+        Integer,
+        nullable=False,
+    )
 
     predicted_delay_days: Mapped[float | None] = mapped_column(
         Float,
@@ -95,36 +160,5 @@ class Case(Base):
         DateTime,
         default=datetime.utcnow,
         onupdate=datetime.utcnow,
-        nullable=False,
-    )
-
-class User(Base):
-    __tablename__ = "users"
-
-    id: Mapped[int] = mapped_column(Integer, primary_key=True, index=True)
-
-    name: Mapped[str] = mapped_column(String(100), nullable=False)
-
-    email: Mapped[str] = mapped_column(
-        String(150),
-        unique=True,
-        index=True,
-        nullable=False,
-    )
-
-    password_hash: Mapped[str] = mapped_column(
-        String(255),
-        nullable=False,
-    )
-
-    role: Mapped[str] = mapped_column(
-        String(50),
-        default="user",
-        nullable=False,
-    )
-
-    created_at: Mapped[datetime] = mapped_column(
-        DateTime,
-        default=datetime.utcnow,
         nullable=False,
     )

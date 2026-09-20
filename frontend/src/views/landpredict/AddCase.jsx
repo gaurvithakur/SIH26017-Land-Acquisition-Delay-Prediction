@@ -13,8 +13,7 @@ import {
   CRow,
   CAlert,
 } from '@coreui/react'
-
-const API_URL = 'http://127.0.0.1:8000'
+import { apiFetch } from '../../api'
 
 const AddCase = () => {
   const dispatch = useDispatch()
@@ -97,11 +96,8 @@ const AddCase = () => {
       // --------------------------------------------------
       // STEP 2: Get prediction from ML model
       // --------------------------------------------------
-      const predictionResponse = await fetch(`${API_URL}/api/predict`, {
+      const predictionResponse = await apiFetch('/api/predict', {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
         body: JSON.stringify(requestData),
       })
 
@@ -131,11 +127,8 @@ const AddCase = () => {
       // --------------------------------------------------
       // STEP 4: Save case to PostgreSQL
       // --------------------------------------------------
-      const saveResponse = await fetch(`${API_URL}/api/cases/`, {
+      const saveResponse = await apiFetch('/api/cases/', {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
         body: JSON.stringify(caseData),
       })
 
@@ -544,9 +537,7 @@ const AddCase = () => {
 
                 <CCardBody>
                   <div className="p-4 bg-light rounded text-center">
-                    <small className="text-muted">
-                      PREDICTED DELAY
-                    </small>
+                    <small className="text-muted">PREDICTED DELAY</small>
 
                     <h2 className="mt-2">
                       {prediction.predictedDelayDays} days

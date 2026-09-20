@@ -135,19 +135,36 @@ export const routes = [
     element: GISMap,
   },
 
-  // IMPORTANT:
-  // ViewCase uses useParams().caseId
+  // View case
   {
     path: '/view-case/:caseId',
     name: 'View Case',
     element: ViewCase,
   },
 
-  // EditCase uses useParams().caseId
+  // Edit case
   {
     path: '/edit-case/:caseId',
     name: 'Edit Case',
     element: EditCase,
+  },
+
+  // =========================
+  // ALERTS
+  // =========================
+
+  // Main Alerts page used by the LANDPREDICT sidebar
+  {
+    path: '/alerts',
+    name: 'Alerts',
+    element: Alerts,
+  },
+
+  // Original CoreUI Alerts component route
+  {
+    path: '/components/alerts',
+    name: 'Alerts Component',
+    element: Alerts,
   },
 
   // =========================
@@ -163,11 +180,6 @@ export const routes = [
     path: '/components/accordion',
     name: 'Accordion',
     element: Accordion,
-  },
-  {
-    path: '/components/alerts',
-    name: 'Alerts',
-    element: Alerts,
   },
   {
     path: '/components/badge',
@@ -221,7 +233,7 @@ export const routes = [
   },
   {
     path: '/components/list-group',
-    name: 'List Group',
+    name: 'List Groups',
     element: ListGroups,
   },
   {

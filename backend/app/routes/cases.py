@@ -9,15 +9,29 @@ from app.schemas.case import CaseCreate, CaseResponse, CaseUpdate
 router = APIRouter(prefix="/api/cases", tags=["Cases"])
 
 
+def get_user_id(current_user):
+    try:
+        return int(current_user["sub"])
+    except (KeyError, TypeError, ValueError):
+        raise HTTPException(
+            status_code=401,
+            detail="Invalid authentication token",
+        )
+
+
 @router.post("/", response_model=CaseResponse)
 def create_case(
     case_data: CaseCreate,
     db: Session = Depends(get_db),
     current_user=Depends(get_current_user),
 ):
-    existing_case = db.query(Case).filter(
-        Case.case_id == case_data.case_id
-    ).first()
+    user_id = get_user_id(current_user)
+
+    existing_case = (
+        db.query(Case)
+        .filter(Case.case_id == case_data.case_id)
+        .first()
+    )
 
     if existing_case:
         raise HTTPException(
@@ -25,7 +39,11 @@ def create_case(
             detail="Case ID already exists",
         )
 
-    case = Case(**case_data.model_dump())
+    case = Case(
+        **case_data.model_dump(),
+        user_id=user_id,
+    )
+
     db.add(case)
     db.commit()
     db.refresh(case)
@@ -38,7 +56,14 @@ def get_cases(
     db: Session = Depends(get_db),
     current_user=Depends(get_current_user),
 ):
-    return db.query(Case).order_by(Case.id.desc()).all()
+    user_id = get_user_id(current_user)
+
+    return (
+        db.query(Case)
+        .filter(Case.user_id == user_id)
+        .order_by(Case.id.desc())
+        .all()
+    )
 
 
 @router.get("/{case_id}", response_model=CaseResponse)
@@ -47,9 +72,16 @@ def get_case(
     db: Session = Depends(get_db),
     current_user=Depends(get_current_user),
 ):
-    case = db.query(Case).filter(
-        Case.case_id == case_id
-    ).first()
+    user_id = get_user_id(current_user)
+
+    case = (
+        db.query(Case)
+        .filter(
+            Case.case_id == case_id,
+            Case.user_id == user_id,
+        )
+        .first()
+    )
 
     if not case:
         raise HTTPException(
@@ -67,9 +99,16 @@ def update_case(
     db: Session = Depends(get_db),
     current_user=Depends(get_current_user),
 ):
-    case = db.query(Case).filter(
-        Case.case_id == case_id
-    ).first()
+    user_id = get_user_id(current_user)
+
+    case = (
+        db.query(Case)
+        .filter(
+            Case.case_id == case_id,
+            Case.user_id == user_id,
+        )
+        .first()
+    )
 
     if not case:
         raise HTTPException(
@@ -94,9 +133,16 @@ def delete_case(
     db: Session = Depends(get_db),
     current_user=Depends(get_current_user),
 ):
-    case = db.query(Case).filter(
-        Case.case_id == case_id
-    ).first()
+    user_id = get_user_id(current_user)
+
+    case = (
+        db.query(Case)
+        .filter(
+            Case.case_id == case_id,
+            Case.user_id == user_id,
+        )
+        .first()
+    )
 
     if not case:
         raise HTTPException(

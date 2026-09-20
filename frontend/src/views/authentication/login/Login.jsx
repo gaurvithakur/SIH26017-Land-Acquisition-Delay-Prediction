@@ -21,7 +21,7 @@ import { google } from 'src/assets/brand/google'
 import { logo } from 'src/assets/brand/logo'
 import { eye } from 'src/assets/icons/eye'
 
-const API_URL = 'http://127.0.0.1:8000'
+const API_URL = import.meta.env.VITE_API_URL || 'http://127.0.0.1:8000'
 
 const Login = () => {
   const navigate = useNavigate()
@@ -56,10 +56,13 @@ const Login = () => {
         throw new Error(data.detail || 'Login failed')
       }
 
-      const storage = rememberMe ? localStorage : sessionStorage
+      // Always store authentication token in localStorage
+      localStorage.setItem('access_token', data.access_token)
+      localStorage.setItem('user', JSON.stringify(data.user))
 
-      storage.setItem('access_token', data.access_token)
-      storage.setItem('user', JSON.stringify(data.user))
+      // Remove any old session storage authentication
+      sessionStorage.removeItem('access_token')
+      sessionStorage.removeItem('user')
 
       navigate('/dashboard')
     } catch (err) {
@@ -134,13 +137,25 @@ const Login = () => {
                         />
 
                         <CInputGroupText>
-                          <CTooltip content={showPassword ? 'Hide password' : 'Show password'}>
+                          <CTooltip
+                            content={
+                              showPassword
+                                ? 'Hide password'
+                                : 'Show password'
+                            }
+                          >
                             <CButton
                               type="button"
                               color="link"
                               className="p-0 link-secondary"
-                              aria-label={showPassword ? 'Hide password' : 'Show password'}
-                              onClick={() => setShowPassword(!showPassword)}
+                              aria-label={
+                                showPassword
+                                  ? 'Hide password'
+                                  : 'Show password'
+                              }
+                              onClick={() =>
+                                setShowPassword(!showPassword)
+                              }
                             >
                               <CIcon icon={eye} size="sm" />
                             </CButton>
@@ -154,7 +169,9 @@ const Login = () => {
                         id="rememberMe"
                         label="Remember me on this device"
                         checked={rememberMe}
-                        onChange={(event) => setRememberMe(event.target.checked)}
+                        onChange={(event) =>
+                          setRememberMe(event.target.checked)
+                        }
                       />
                     </CCol>
 

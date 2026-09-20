@@ -16,7 +16,7 @@ import {
   CSpinner,
 } from '@coreui/react'
 
-const API_URL = 'http://127.0.0.1:8000'
+import { apiFetch } from '../../api'
 
 const PredictRisk = () => {
   const navigate = useNavigate()
@@ -90,11 +90,9 @@ const PredictRisk = () => {
     }
 
     try {
-      const response = await fetch(`${API_URL}/api/predict`, {
+      // Authenticated prediction request
+      const response = await apiFetch('/api/predict', {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
         body: JSON.stringify(payload),
       })
 

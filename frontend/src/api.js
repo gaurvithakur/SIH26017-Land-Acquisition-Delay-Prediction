@@ -1,15 +1,13 @@
-const API_URL = 'http://127.0.0.1:8000'
+const API_URL = import.meta.env.VITE_API_URL || 'http://127.0.0.1:8000'
 
 export const getAuthToken = () => {
-  return (
-    localStorage.getItem('access_token') ||
-    sessionStorage.getItem('access_token')
-  )
+  return localStorage.getItem('access_token')
 }
 
 export const clearAuth = () => {
   localStorage.removeItem('access_token')
   localStorage.removeItem('user')
+
   sessionStorage.removeItem('access_token')
   sessionStorage.removeItem('user')
 }
@@ -18,7 +16,6 @@ export const apiFetch = async (endpoint, options = {}) => {
   const token = getAuthToken()
 
   if (!token) {
-    clearAuth()
     window.location.hash = '#/authentication/login'
     throw new Error('Not authenticated')
   }
