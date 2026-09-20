@@ -1,4 +1,5 @@
 from datetime import datetime, timedelta, timezone
+import os
 
 import jwt
 from argon2 import PasswordHasher
@@ -19,7 +20,10 @@ router = APIRouter(prefix="/api/auth", tags=["Authentication"])
 
 password_hasher = PasswordHasher()
 
-JWT_SECRET = "landpredict-secret-change-this-later"
+JWT_SECRET = os.getenv(
+    "JWT_SECRET",
+    "landpredict-secret-change-this-later",
+)
 JWT_ALGORITHM = "HS256"
 JWT_EXPIRATION_MINUTES = 60 * 24
 
@@ -131,4 +135,3 @@ def login(request: LoginRequest):
 
     finally:
         db.close()
-        

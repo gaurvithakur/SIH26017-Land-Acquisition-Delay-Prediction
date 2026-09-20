@@ -1,8 +1,10 @@
+import os
+
 import jwt
 from fastapi import Depends, HTTPException, status
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 
-JWT_SECRET = "landpredict-secret-change-this-later"
+JWT_SECRET = os.getenv("JWT_SECRET", "landpredict-secret-change-this-later")
 JWT_ALGORITHM = "HS256"
 
 security = HTTPBearer()
