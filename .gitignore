@@ -32,3 +32,5 @@ Thumbs.db
 # Uncomment if datasets are too large for GitHub
 # data/raw/*
 # data/processed/*
+# Local database backup
+landpredict_backup.dump
