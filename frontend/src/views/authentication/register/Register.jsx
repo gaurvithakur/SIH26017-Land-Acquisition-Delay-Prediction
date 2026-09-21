@@ -22,7 +22,7 @@ import { google } from 'src/assets/brand/google'
 import { logo } from 'src/assets/brand/logo'
 import { eye } from 'src/assets/icons/eye'
 
-const API_URL = 'http://127.0.0.1:8000'
+const API_URL = import.meta.env.VITE_API_URL || 'http://127.0.0.1:8000'
 
 const Register = () => {
   const navigate = useNavigate()

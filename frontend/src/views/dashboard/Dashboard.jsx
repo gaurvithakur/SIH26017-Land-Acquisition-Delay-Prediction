@@ -392,15 +392,37 @@ const Dashboard = () => {
                 </p>
               ) : (
                 <>
-                  <p>
-                    <strong>⚠️ High Delay Alert:</strong>{' '}
-                    {highCount} land acquisition case
-                    {highCount !== 1 ? 's have' : ' has'} a predicted delay
-                    of 120 days or more.
-                  </p>
+                  {/* HIGH DELAY ALERT */}
+                  {highDelayCases.length > 0 ? (
+                    <CAlert color="danger" className="mb-4">
+                      <h5 className="alert-heading mb-2">
+                        🔴 High Delay Alert
+                      </h5>
+
+                      {highDelayCases.map((item) => (
+                        <p key={item.case_id} className="mb-1">
+                          <strong>{item.case_id}</strong> has a predicted delay
+                          of{' '}
+                          <strong>
+                            {Number(item.predicted_delay_days).toFixed(2)} days.
+                          </strong>
+                        </p>
+                      ))}
+                    </CAlert>
+                  ) : (
+                    <CAlert color="success" className="mb-4">
+                      <strong>✅ No High Delay Alerts</strong>
+
+                      <p className="mb-0 mt-1">
+                        No land acquisition cases currently have a predicted
+                        delay of 120 days or more.
+                      </p>
+                    </CAlert>
+                  )}
 
                   <hr />
 
+                  {/* PREDICTION FACTORS */}
                   <p>
                     <strong>📌 Prediction Factors:</strong>{' '}
                     The prediction model considers factors such as court
@@ -411,6 +433,7 @@ const Dashboard = () => {
 
                   <hr />
 
+                  {/* MONITORING */}
                   <p className="mb-0">
                     <strong>📈 Monitoring:</strong>{' '}
                     Cases with higher predicted delays can be reviewed and

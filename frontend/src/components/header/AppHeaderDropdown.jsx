@@ -1,4 +1,4 @@
-import React from 'react'
+import React, { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 
 import {
@@ -25,6 +25,8 @@ import {
 const AppHeaderDropdown = ({ alerts = [], onAlertClick }) => {
   const navigate = useNavigate()
 
+  const [showUpdates, setShowUpdates] = useState(false)
+
   const storedUser = localStorage.getItem('user')
   const sessionUser = sessionStorage.getItem('user')
 
@@ -50,7 +52,14 @@ const AppHeaderDropdown = ({ alerts = [], onAlertClick }) => {
     sessionStorage.removeItem('access_token')
     sessionStorage.removeItem('user')
 
-    navigate('/authentication/login')
+    navigate('/authentication/login', { replace: true })
+  }
+
+  const handleUpdatesClick = (event) => {
+    event.preventDefault()
+    event.stopPropagation()
+
+    setShowUpdates((previous) => !previous)
   }
 
   return (
@@ -74,9 +83,32 @@ const AppHeaderDropdown = ({ alerts = [], onAlertClick }) => {
           )}
         </CDropdownHeader>
 
-        {/* Notifications */}
-        <CDropdownHeader className="fw-semibold">
-          Updates
+        {/* Updates Toggle */}
+        <div
+          role="button"
+          tabIndex={0}
+          onMouseDown={(event) => {
+            event.preventDefault()
+            event.stopPropagation()
+          }}
+          onClick={handleUpdatesClick}
+          onKeyDown={(event) => {
+            if (event.key === 'Enter' || event.key === ' ') {
+              event.preventDefault()
+              event.stopPropagation()
+              setShowUpdates((previous) => !previous)
+            }
+          }}
+          style={{
+            width: '100%',
+            padding: '0.5rem 1rem',
+            cursor: 'pointer',
+            userSelect: 'none',
+          }}
+        >
+          <CIcon icon={cilBell} className="me-2" />
+
+          <strong>Updates</strong>
 
           <CBadge
             color={alerts.length > 0 ? 'danger' : 'secondary'}
@@ -84,56 +116,65 @@ const AppHeaderDropdown = ({ alerts = [], onAlertClick }) => {
           >
             {alerts.length}
           </CBadge>
-        </CDropdownHeader>
 
-        {alerts.length === 0 ? (
-          <CDropdownItem disabled>
-            <CIcon icon={cilBell} className="me-2" />
-            No new updates
-          </CDropdownItem>
-        ) : (
-          alerts.slice(0, 5).map((alert) => (
-            <CDropdownItem
-              key={`${alert.caseId}-${alert.type}`}
-              onClick={() => onAlertClick?.(alert.caseId)}
-              style={{
-                cursor: 'pointer',
-                whiteSpace: 'normal',
-              }}
-            >
-              <CIcon
-                icon={cilBell}
-                className={`me-2 ${
-                  alert.type === 'high'
-                    ? 'text-danger'
-                    : 'text-warning'
-                }`}
-              />
+          <span className="float-end">
+            {showUpdates ? '▲' : '▼'}
+          </span>
+        </div>
 
-              <span>
-                <strong>{alert.title}</strong>
-
-                <br />
-
-                <small className="text-body-secondary">
-                  {alert.message}
-                </small>
-              </span>
-            </CDropdownItem>
-          ))
-        )}
-
-        {alerts.length > 0 && (
+        {/* Updates Content */}
+        {showUpdates && (
           <>
-            <CDropdownDivider />
+            {alerts.length === 0 ? (
+              <CDropdownItem disabled>
+                <CIcon icon={cilBell} className="me-2" />
+                No new updates
+              </CDropdownItem>
+            ) : (
+              alerts.slice(0, 5).map((alert) => (
+                <CDropdownItem
+                  key={`${alert.caseId}-${alert.type}`}
+                  onClick={() => onAlertClick?.(alert.caseId)}
+                  style={{
+                    cursor: 'pointer',
+                    whiteSpace: 'normal',
+                  }}
+                >
+                  <CIcon
+                    icon={cilBell}
+                    className={`me-2 ${
+                      alert.type === 'high'
+                        ? 'text-danger'
+                        : 'text-warning'
+                    }`}
+                  />
 
-            <CDropdownItem
-              onClick={() => navigate('/high-risk-cases')}
-              style={{ cursor: 'pointer' }}
-            >
-              <CIcon icon={cilBell} className="me-2" />
-              View all updates
-            </CDropdownItem>
+                  <span>
+                    <strong>{alert.title}</strong>
+
+                    <br />
+
+                    <small className="text-body-secondary">
+                      {alert.message}
+                    </small>
+                  </span>
+                </CDropdownItem>
+              ))
+            )}
+
+            {alerts.length > 0 && (
+              <>
+                <CDropdownDivider />
+
+                <CDropdownItem
+                  onClick={() => navigate('/high-risk-cases')}
+                  style={{ cursor: 'pointer' }}
+                >
+                  <CIcon icon={cilBell} className="me-2" />
+                  View all updates
+                </CDropdownItem>
+              </>
+            )}
           </>
         )}
 
