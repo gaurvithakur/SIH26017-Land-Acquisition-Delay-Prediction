@@ -1,0 +1,13 @@
+fastapi
+uvicorn[standard]
+sqlalchemy
+psycopg2-binary
+pydantic
+pydantic-settings
+PyJWT
+argon2-cffi
+email-validator
+pandas
+joblib
+scikit-learn==1.9.0
+python-multipart

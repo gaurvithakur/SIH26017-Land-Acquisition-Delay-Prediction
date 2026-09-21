@@ -1,33 +1,84 @@
-import React from 'react'
-import { useSelector } from 'react-redux'
+import React, { useEffect, useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 
-import { CButton, CCard, CCardBody, CCardHeader, CCol, CRow } from '@coreui/react'
+import {
+  CButton,
+  CCard,
+  CCardBody,
+  CCardHeader,
+  CCol,
+  CRow,
+  CSpinner,
+} from '@coreui/react'
+
+import { apiFetch } from '../../api'
 
 const ViewCase = () => {
-  const { index } = useParams()
+  const { caseId } = useParams()
   const navigate = useNavigate()
 
-  const cases = useSelector((state) => state.cases)
+  const [selectedCase, setSelectedCase] = useState(null)
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState('')
 
-  // Get selected case
-  const selectedCase = cases[Number(index)]
+  useEffect(() => {
+    const loadCase = async () => {
+      try {
+        setLoading(true)
+        setError('')
 
-  // Risk color
-  const getRiskColor = (risk) => {
-    if (risk === 'High') return 'danger'
-    if (risk === 'Medium') return 'warning'
-    return 'success'
+        const response = await apiFetch(
+          `/api/cases/${encodeURIComponent(caseId)}`,
+        )
+
+        const data = await response.json()
+
+        if (!response.ok) {
+          throw new Error(data.detail || 'Failed to load case.')
+        }
+
+        setSelectedCase(data)
+      } catch (err) {
+        console.error(err)
+        setError(err.message || 'Unable to load case.')
+      } finally {
+        setLoading(false)
+      }
+    }
+
+    if (caseId) {
+      loadCase()
+    }
+  }, [caseId])
+
+  if (loading) {
+    return (
+      <div className="text-center py-5">
+        <CSpinner color="primary" />
+
+        <div className="mt-3 text-body-secondary">
+          Loading case details...
+        </div>
+      </div>
+    )
   }
 
-  // If case is not found
-  if (!selectedCase) {
+  if (error || !selectedCase) {
     return (
       <CCard>
         <CCardBody>
           <h4>Case not found.</h4>
 
-          <CButton color="primary" onClick={() => navigate('/dashboard')}>
+          {error && (
+            <p className="text-danger">
+              {error}
+            </p>
+          )}
+
+          <CButton
+            color="primary"
+            onClick={() => navigate('/dashboard')}
+          >
             Back to Dashboard
           </CButton>
         </CCardBody>
@@ -39,158 +90,290 @@ const ViewCase = () => {
     <CRow>
       <CCol xs={12}>
         <CCard className="mb-4 shadow-sm">
-          <CCardHeader className="d-flex justify-content-between align-items-center">
-            <strong>👁️ Land Acquisition Case Details</strong>
 
-            <span className={`badge bg-${getRiskColor(selectedCase.risk)}`}>
-              {selectedCase.risk} Risk
-            </span>
+          <CCardHeader>
+            <strong>👁️ Land Acquisition Case Details</strong>
           </CCardHeader>
 
           <CCardBody>
-            {/* Basic Information */}
-            <h5 className="mb-3">📋 Basic Information</h5>
+
+            {/* ================= BASIC INFORMATION ================= */}
+
+            <h5 className="mb-3">
+              📋 Basic Information
+            </h5>
 
             <CRow className="mb-4">
+
               <CCol md={4} className="mb-3">
                 <strong>Case ID</strong>
-                <div className="text-body-secondary">{selectedCase.caseId}</div>
+
+                <div className="text-body-secondary">
+                  {selectedCase.case_id}
+                </div>
               </CCol>
 
               <CCol md={4} className="mb-3">
                 <strong>State</strong>
-                <div className="text-body-secondary">{selectedCase.state}</div>
+
+                <div className="text-body-secondary">
+                  {selectedCase.state}
+                </div>
               </CCol>
 
               <CCol md={4} className="mb-3">
                 <strong>District</strong>
-                <div className="text-body-secondary">{selectedCase.district}</div>
+
+                <div className="text-body-secondary">
+                  {selectedCase.district}
+                </div>
               </CCol>
 
               <CCol md={4} className="mb-3">
                 <strong>Project Type</strong>
-                <div className="text-body-secondary">{selectedCase.projectType}</div>
+
+                <div className="text-body-secondary">
+                  {selectedCase.project_type}
+                </div>
               </CCol>
 
               <CCol md={4} className="mb-3">
                 <strong>Land Area</strong>
-                <div className="text-body-secondary">{selectedCase.landArea} Acres</div>
+
+                <div className="text-body-secondary">
+                  {selectedCase.land_area_acres} Acres
+                </div>
               </CCol>
 
               <CCol md={4} className="mb-3">
                 <strong>Number of Landowners</strong>
-                <div className="text-body-secondary">{selectedCase.landowners}</div>
+
+                <div className="text-body-secondary">
+                  {selectedCase.number_of_landowners}
+                </div>
               </CCol>
 
               <CCol md={4} className="mb-3">
                 <strong>Acquisition Stage</strong>
-                <div className="text-body-secondary">{selectedCase.acquisitionStage}</div>
+
+                <div className="text-body-secondary">
+                  {selectedCase.acquisition_stage}
+                </div>
               </CCol>
+
             </CRow>
 
             <hr />
 
-            {/* Risk Analysis Factors */}
-            <h5 className="mb-3 mt-4">⚠️ Risk Analysis Factors</h5>
+            {/* ================= ACQUISITION FACTORS ================= */}
+
+            <h5 className="mb-3 mt-4">
+              ⚠️ Acquisition Factors
+            </h5>
 
             <CRow className="mb-4">
+
               <CCol md={4} className="mb-3">
                 <strong>Number of Objections</strong>
-                <div className="text-body-secondary">{selectedCase.objections}</div>
+
+                <div className="text-body-secondary">
+                  {selectedCase.number_of_objections}
+                </div>
               </CCol>
 
               <CCol md={4} className="mb-3">
                 <strong>Number of Court Cases</strong>
-                <div className="text-body-secondary">{selectedCase.courtCases}</div>
+
+                <div className="text-body-secondary">
+                  {selectedCase.number_of_court_cases}
+                </div>
               </CCol>
 
               <CCol md={4} className="mb-3">
                 <strong>Compensation Completed</strong>
-                <div className="text-body-secondary">{selectedCase.compensation}%</div>
+
+                <div className="text-body-secondary">
+                  {selectedCase.compensation_completed_pct}%
+                </div>
               </CCol>
 
               <CCol md={4} className="mb-3">
                 <strong>Pending Approvals</strong>
-                <div className="text-body-secondary">{selectedCase.pendingApprovals}</div>
+
+                <div className="text-body-secondary">
+                  {selectedCase.pending_approvals}
+                </div>
               </CCol>
 
               <CCol md={4} className="mb-3">
                 <strong>Days in Current Stage</strong>
-                <div className="text-body-secondary">{selectedCase.daysInCurrentStage} Days</div>
+
+                <div className="text-body-secondary">
+                  {selectedCase.days_in_current_stage} Days
+                </div>
               </CCol>
+
+              <CCol md={4} className="mb-3">
+                <strong>Sanction Amount</strong>
+
+                <div className="text-body-secondary">
+                  {selectedCase.sanction_amount_lakh} Lakh
+                </div>
+              </CCol>
+
+              <CCol md={4} className="mb-3">
+                <strong>Structures Affected</strong>
+
+                <div className="text-body-secondary">
+                  {selectedCase.structures_affected}
+                </div>
+              </CCol>
+
+              <CCol md={4} className="mb-3">
+                <strong>Dispute Severity</strong>
+
+                <div className="text-body-secondary">
+                  {selectedCase.dispute_severity}
+                </div>
+              </CCol>
+
+              <CCol md={4} className="mb-3">
+                <strong>Relocation Required</strong>
+
+                <div className="text-body-secondary">
+                  {selectedCase.relocation_required}
+                </div>
+              </CCol>
+
             </CRow>
 
             <hr />
 
-            {/* Prediction Result */}
-            <h5 className="mb-3 mt-4">🤖 LANDPREDICT Prediction</h5>
+            {/* ================= PREDICTION ================= */}
 
-            <CRow className="mb-4">
-              <CCol md={4} className="mb-3">
-                <CCard className="h-100 shadow-sm">
-                  <CCardBody className="text-center">
-                    <small className="text-body-secondary">DELAY RISK</small>
+            <h5 className="mb-3 mt-4">
+              🤖 LANDPREDICT Prediction
+            </h5>
 
-                    <h3 className={`mt-2 text-${getRiskColor(selectedCase.risk)}`}>
-                      {selectedCase.risk}
-                    </h3>
-                  </CCardBody>
-                </CCard>
-              </CCol>
+            <CCard className="mb-4 shadow-sm">
 
-              <CCol md={4} className="mb-3">
-                <CCard className="h-100 shadow-sm">
-                  <CCardBody className="text-center">
-                    <small className="text-body-secondary">RISK SCORE</small>
+              <CCardBody className="text-center">
 
-                    <h3 className="mt-2">{selectedCase.score}%</h3>
-                  </CCardBody>
-                </CCard>
-              </CCol>
+                <small className="text-body-secondary">
+                  PREDICTED DELAY
+                </small>
 
-              <CCol md={4} className="mb-3">
-                <CCard className="h-100 shadow-sm">
-                  <CCardBody className="text-center">
-                    <small className="text-body-secondary">EXPECTED DELAY</small>
+                <h2 className="mt-2">
 
-                    <h5 className="mt-2">{selectedCase.delay}</h5>
-                  </CCardBody>
-                </CCard>
-              </CCol>
-            </CRow>
+                  {selectedCase.predicted_delay_days !== null &&
+                  selectedCase.predicted_delay_days !== undefined
+                    ? `${selectedCase.predicted_delay_days} Days`
+                    : 'Not predicted'}
 
-            {/* Major Risk Factors */}
-            <CCard className="mb-4">
-              <CCardHeader>
-                <strong>⚠️ Major Risk Factors</strong>
-              </CCardHeader>
+                </h2>
 
-              <CCardBody>
-                {selectedCase.factors && selectedCase.factors.length > 0 ? (
-                  <ul className="mb-0">
-                    {selectedCase.factors.map((factor, factorIndex) => (
-                      <li key={factorIndex} className="mb-2">
-                        {factor}
-                      </li>
-                    ))}
-                  </ul>
-                ) : (
-                  <p className="mb-0 text-body-secondary">No major risk factors detected.</p>
-                )}
+                <p className="text-body-secondary mb-0">
+                  Estimated by the LANDPREDICT machine learning model.
+                </p>
+
               </CCardBody>
+
             </CCard>
 
-            {/* Buttons */}
+            {/* ================= STATUS ================= */}
+
+            <h5 className="mb-3 mt-4">
+              📄 Status Information
+            </h5>
+
+            <CRow className="mb-4">
+
+              <CCol md={4} className="mb-3">
+                <strong>Land Acquisition Agency</strong>
+
+                <div className="text-body-secondary">
+                  {selectedCase.land_acquisition_agency}
+                </div>
+              </CCol>
+
+              <CCol md={4} className="mb-3">
+                <strong>Environmental Clearance</strong>
+
+                <div className="text-body-secondary">
+                  {selectedCase.environmental_clearance}
+                </div>
+              </CCol>
+
+              <CCol md={4} className="mb-3">
+                <strong>Forest Clearance</strong>
+
+                <div className="text-body-secondary">
+                  {selectedCase.forest_clearance}
+                </div>
+              </CCol>
+
+              <CCol md={4} className="mb-3">
+                <strong>Payment Status</strong>
+
+                <div className="text-body-secondary">
+                  {selectedCase.payment_status}
+                </div>
+              </CCol>
+
+              <CCol md={4} className="mb-3">
+                <strong>Document Verification</strong>
+
+                <div className="text-body-secondary">
+                  {selectedCase.document_verification_status}
+                </div>
+              </CCol>
+
+              <CCol md={4} className="mb-3">
+                <strong>Project Length</strong>
+
+                <div className="text-body-secondary">
+                  {selectedCase.project_length_km} KM
+                </div>
+              </CCol>
+
+              <CCol md={4} className="mb-3">
+                <strong>Last Review</strong>
+
+                <div className="text-body-secondary">
+                  {selectedCase.last_review_days_ago} Days Ago
+                </div>
+              </CCol>
+
+            </CRow>
+
+            {/* ================= ACTION BUTTONS ================= */}
+
             <div className="d-flex gap-2">
-              <CButton color="primary" onClick={() => navigate(`/edit-case/${index}`)}>
+
+              <CButton
+                color="primary"
+                onClick={() =>
+                  navigate(
+                    `/edit-case/${encodeURIComponent(
+                      selectedCase.case_id,
+                    )}`,
+                  )
+                }
+              >
                 ✏️ Edit Case
               </CButton>
 
-              <CButton color="secondary" onClick={() => navigate('/dashboard')}>
+              <CButton
+                color="secondary"
+                onClick={() => navigate('/dashboard')}
+              >
                 ← Back to Dashboard
               </CButton>
+
             </div>
+
           </CCardBody>
+
         </CCard>
       </CCol>
     </CRow>

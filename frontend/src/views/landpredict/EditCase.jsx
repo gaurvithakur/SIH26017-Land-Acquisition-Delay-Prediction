@@ -1,5 +1,4 @@
-import React, { useState } from 'react'
-import { useDispatch, useSelector } from 'react-redux'
+import React, { useEffect, useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 
 import {
@@ -13,157 +12,269 @@ import {
   CFormLabel,
   CFormSelect,
   CRow,
+  CSpinner,
 } from '@coreui/react'
 
+import { apiFetch } from '../../api'
+
 const EditCase = () => {
-  const { index } = useParams()
-  const dispatch = useDispatch()
+  const { caseId } = useParams()
   const navigate = useNavigate()
 
-  const cases = useSelector((state) => state.cases)
-
-  // Get selected case
-  const selectedCase = cases[Number(index)]
+  const [loading, setLoading] = useState(true)
+  const [saving, setSaving] = useState(false)
+  const [error, setError] = useState('')
 
   const [formData, setFormData] = useState({
-    caseId: selectedCase?.caseId || '',
-    state: selectedCase?.state || '',
-    district: selectedCase?.district || '',
-    projectType: selectedCase?.projectType || '',
-    landArea: selectedCase?.landArea || '',
-    landowners: selectedCase?.landowners || '',
-    acquisitionStage: selectedCase?.acquisitionStage || '',
-    objections: selectedCase?.objections || '',
-    courtCases: selectedCase?.courtCases || '',
-    compensation: selectedCase?.compensation || '',
-    pendingApprovals: selectedCase?.pendingApprovals || '',
-    daysInCurrentStage: selectedCase?.daysInCurrentStage || '',
+    caseId: '',
+    state: '',
+    district: '',
+    projectType: '',
+    landArea: '',
+    landowners: '',
+    acquisitionStage: '',
+    objections: '',
+    courtCases: '',
+    compensation: '',
+    pendingApprovals: '',
+    daysInCurrentStage: '',
+    sanctionAmount: '',
+    landAcquisitionAgency: '',
+    environmentalClearance: '',
+    forestClearance: '',
+    relocationRequired: '',
+    structuresAffected: '',
+    disputeSeverity: '',
+    paymentStatus: '',
+    documentVerificationStatus: '',
+    projectLength: '',
+    lastReviewDaysAgo: '',
   })
+
+  // ==================== LOAD CASE ====================
+
+  useEffect(() => {
+    const fetchCase = async () => {
+      try {
+        setLoading(true)
+        setError('')
+
+        const response = await apiFetch(
+          `/api/cases/${encodeURIComponent(caseId)}`,
+        )
+
+        const data = await response.json()
+
+        if (!response.ok) {
+          throw new Error(
+            data.detail || 'Failed to load case.',
+          )
+        }
+
+        setFormData({
+          caseId: data.case_id || '',
+          state: data.state || '',
+          district: data.district || '',
+          projectType: data.project_type || '',
+          landArea: data.land_area_acres ?? '',
+          landowners: data.number_of_landowners ?? '',
+          acquisitionStage: data.acquisition_stage || '',
+          objections: data.number_of_objections ?? '',
+          courtCases: data.number_of_court_cases ?? '',
+          compensation: data.compensation_completed_pct ?? '',
+          pendingApprovals: data.pending_approvals ?? '',
+          daysInCurrentStage: data.days_in_current_stage ?? '',
+          sanctionAmount: data.sanction_amount_lakh ?? '',
+          landAcquisitionAgency:
+            data.land_acquisition_agency || '',
+          environmentalClearance:
+            data.environmental_clearance || '',
+          forestClearance:
+            data.forest_clearance || '',
+          relocationRequired:
+            data.relocation_required || '',
+          structuresAffected:
+            data.structures_affected ?? '',
+          disputeSeverity:
+            data.dispute_severity || '',
+          paymentStatus:
+            data.payment_status || '',
+          documentVerificationStatus:
+            data.document_verification_status || '',
+          projectLength:
+            data.project_length_km ?? '',
+          lastReviewDaysAgo:
+            data.last_review_days_ago ?? '',
+        })
+      } catch (err) {
+        console.error(err)
+        setError(
+          err.message ||
+            'Unable to load the case from the database.',
+        )
+      } finally {
+        setLoading(false)
+      }
+    }
+
+    if (caseId) {
+      fetchCase()
+    }
+  }, [caseId])
+
+  // ==================== HANDLE CHANGE ====================
 
   const handleChange = (e) => {
     const { name, value } = e.target
 
-    setFormData({
-      ...formData,
+    setFormData((previous) => ({
+      ...previous,
       [name]: value,
-    })
+    }))
   }
 
-  // Recalculate prediction
-  const calculatePrediction = () => {
-    let riskScore = 0
-    let factors = []
+  // ==================== UPDATE CASE ====================
 
-    const courtCases = Number(formData.courtCases)
-    const objections = Number(formData.objections)
-    const pendingApprovals = Number(formData.pendingApprovals)
-    const compensation = Number(formData.compensation)
-    const days = Number(formData.daysInCurrentStage)
-
-    // Court Cases
-    if (courtCases >= 5) {
-      riskScore += 25
-      factors.push('High number of court cases')
-    } else if (courtCases >= 2) {
-      riskScore += 15
-      factors.push('Multiple court cases')
-    }
-
-    // Pending Approvals
-    if (pendingApprovals >= 5) {
-      riskScore += 20
-      factors.push('High number of pending approvals')
-    } else if (pendingApprovals >= 2) {
-      riskScore += 10
-      factors.push('Pending approvals may cause delays')
-    }
-
-    // Objections
-    if (objections >= 10) {
-      riskScore += 15
-      factors.push('High number of objections')
-    } else if (objections >= 3) {
-      riskScore += 8
-      factors.push('Multiple objections received')
-    }
-
-    // Compensation
-    if (compensation < 50) {
-      riskScore += 20
-      factors.push('Low compensation completion')
-    } else if (compensation < 80) {
-      riskScore += 10
-      factors.push('Compensation is partially completed')
-    }
-
-    // Days in Current Stage
-    if (days >= 180) {
-      riskScore += 20
-      factors.push('Case has been in the current stage for a long time')
-    } else if (days >= 90) {
-      riskScore += 10
-      factors.push('Long duration in current acquisition stage')
-    }
-
-    let risk = ''
-    let delay = ''
-
-    if (riskScore >= 50) {
-      risk = 'High'
-      delay = '120+ Days'
-    } else if (riskScore >= 25) {
-      risk = 'Medium'
-      delay = '60–120 Days'
-    } else {
-      risk = 'Low'
-      delay = 'Less than 60 Days'
-    }
-
-    if (factors.length === 0) {
-      factors.push('No major delay risk factors detected')
-    }
-
-    return {
-      risk,
-      score: riskScore,
-      delay,
-      factors,
-    }
-  }
-
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault()
 
-    const prediction = calculatePrediction()
+    setSaving(true)
+    setError('')
 
-    const updatedCase = {
-      ...formData,
-      ...prediction,
+    try {
+      const predictionPayload = {
+        state: formData.state,
+        district: formData.district,
+        project_type: formData.projectType,
+        land_area_acres: Number(formData.landArea),
+        number_of_landowners: Number(formData.landowners),
+        acquisition_stage: formData.acquisitionStage,
+        number_of_objections: Number(formData.objections),
+        number_of_court_cases: Number(formData.courtCases),
+        compensation_completed_pct: Number(formData.compensation),
+        pending_approvals: Number(formData.pendingApprovals),
+        days_in_current_stage:
+          Number(formData.daysInCurrentStage),
+        sanction_amount_lakh:
+          Number(formData.sanctionAmount),
+        land_acquisition_agency:
+          formData.landAcquisitionAgency,
+        environmental_clearance:
+          formData.environmentalClearance,
+        forest_clearance:
+          formData.forestClearance,
+        relocation_required:
+          formData.relocationRequired,
+        structures_affected:
+          Number(formData.structuresAffected),
+        dispute_severity:
+          formData.disputeSeverity,
+        payment_status:
+          formData.paymentStatus,
+        document_verification_status:
+          formData.documentVerificationStatus,
+        project_length_km:
+          Number(formData.projectLength),
+        last_review_days_ago:
+          Number(formData.lastReviewDaysAgo),
+      }
+
+      // ==================== NEW PREDICTION ====================
+
+      const predictionResponse = await apiFetch(
+        '/api/predict',
+        {
+          method: 'POST',
+          body: JSON.stringify(predictionPayload),
+        },
+      )
+
+      const predictionData =
+        await predictionResponse.json()
+
+      if (!predictionResponse.ok) {
+        throw new Error(
+          predictionData.detail ||
+            'Prediction request failed.',
+        )
+      }
+
+      // ==================== UPDATE DATABASE ====================
+
+      const updatePayload = {
+        ...predictionPayload,
+        predicted_delay_days:
+          predictionData.predicted_delay_days,
+      }
+
+      const updateResponse = await apiFetch(
+        `/api/cases/${encodeURIComponent(caseId)}`,
+        {
+          method: 'PUT',
+          body: JSON.stringify(updatePayload),
+        },
+      )
+
+      const updateData = await updateResponse.json()
+
+      if (!updateResponse.ok) {
+        throw new Error(
+          updateData.detail ||
+            'Case update failed.',
+        )
+      }
+
+      window.alert(
+        `Case ${caseId} updated successfully!\n\nNew predicted delay: ${predictionData.predicted_delay_days} days`,
+      )
+
+      navigate('/all-cases')
+    } catch (err) {
+      console.error(err)
+
+      setError(
+        err.message ||
+          'Unable to update the case.',
+      )
+    } finally {
+      setSaving(false)
     }
-
-    dispatch({
-      type: 'UPDATE_CASE',
-      payload: {
-        index: Number(index),
-        updatedCase,
-      },
-    })
-
-    alert('Case updated successfully!')
-
-    navigate('/')
   }
 
-  // If invalid case index
-  if (!selectedCase) {
+  // ==================== LOADING ====================
+
+  if (loading) {
+    return (
+      <div className="text-center py-5">
+        <CSpinner color="primary" />
+
+        <div className="mt-3 text-body-secondary">
+          Loading case...
+        </div>
+      </div>
+    )
+  }
+
+  // ==================== ERROR ====================
+
+  if (error && !formData.caseId) {
     return (
       <CCard>
         <CCardBody>
+
           <h4>Case not found.</h4>
 
-          <CButton color="primary" onClick={() => navigate('/')}>
+          <p className="text-danger">
+            {error}
+          </p>
+
+          <CButton
+            color="primary"
+            onClick={() => navigate('/dashboard')}
+          >
             Back to Dashboard
           </CButton>
+
         </CCardBody>
       </CCard>
     )
@@ -172,144 +283,542 @@ const EditCase = () => {
   return (
     <CRow>
       <CCol xs={12}>
-        <CCard className="mb-4">
+
+        <CCard className="mb-4 shadow-sm">
+
           <CCardHeader>
-            <strong>✏️ Edit Land Acquisition Case</strong>
+            <strong>
+              ✏️ Edit Land Acquisition Case
+            </strong>
           </CCardHeader>
 
           <CCardBody>
+
+            {error && (
+              <div
+                className="alert alert-danger"
+                role="alert"
+              >
+                {error}
+              </div>
+            )}
+
             <CForm onSubmit={handleSubmit}>
+
               <CRow>
-                <CCol md={6}>
-                  <CFormLabel>Case ID</CFormLabel>
-                  <CFormInput name="caseId" value={formData.caseId} onChange={handleChange} />
-                </CCol>
+
+                {/* Case ID */}
 
                 <CCol md={6}>
-                  <CFormLabel>State</CFormLabel>
-                  <CFormInput name="state" value={formData.state} onChange={handleChange} />
+                  <CFormLabel>
+                    Case ID
+                  </CFormLabel>
+
+                  <CFormInput
+                    name="caseId"
+                    value={formData.caseId}
+                    disabled
+                  />
                 </CCol>
 
-                <CCol md={6} className="mt-3">
-                  <CFormLabel>District</CFormLabel>
-                  <CFormInput name="district" value={formData.district} onChange={handleChange} />
+                {/* State */}
+
+                <CCol md={6}>
+                  <CFormLabel>
+                    State
+                  </CFormLabel>
+
+                  <CFormInput
+                    name="state"
+                    value={formData.state}
+                    onChange={handleChange}
+                    required
+                  />
                 </CCol>
 
+                {/* District */}
+
                 <CCol md={6} className="mt-3">
-                  <CFormLabel>Project Type</CFormLabel>
-                  <CFormSelect
+                  <CFormLabel>
+                    District
+                  </CFormLabel>
+
+                  <CFormInput
+                    name="district"
+                    value={formData.district}
+                    onChange={handleChange}
+                    required
+                  />
+                </CCol>
+
+                {/* Project Type */}
+
+                <CCol md={6} className="mt-3">
+                  <CFormLabel>
+                    Project Type
+                  </CFormLabel>
+
+                  <CFormInput
                     name="projectType"
                     value={formData.projectType}
                     onChange={handleChange}
-                  >
-                    <option value="">Select Project Type</option>
-                    <option value="Highway">Highway</option>
-                    <option value="Railway">Railway</option>
-                    <option value="Industrial">Industrial</option>
-                    <option value="Infrastructure">Infrastructure</option>
-                    <option value="Metro">Metro</option>
-                  </CFormSelect>
+                    required
+                  />
                 </CCol>
 
+                {/* Land Area */}
+
                 <CCol md={6} className="mt-3">
-                  <CFormLabel>Land Area (Acres)</CFormLabel>
+                  <CFormLabel>
+                    Land Area (Acres)
+                  </CFormLabel>
+
                   <CFormInput
                     type="number"
+                    min="0"
                     name="landArea"
                     value={formData.landArea}
                     onChange={handleChange}
+                    required
                   />
                 </CCol>
 
+                {/* Landowners */}
+
                 <CCol md={6} className="mt-3">
-                  <CFormLabel>Number of Landowners</CFormLabel>
+                  <CFormLabel>
+                    Number of Landowners
+                  </CFormLabel>
+
                   <CFormInput
                     type="number"
+                    min="0"
                     name="landowners"
                     value={formData.landowners}
                     onChange={handleChange}
+                    required
                   />
                 </CCol>
 
+                {/* Acquisition Stage */}
+
                 <CCol md={6} className="mt-3">
-                  <CFormLabel>Acquisition Stage</CFormLabel>
-                  <CFormSelect
+                  <CFormLabel>
+                    Acquisition Stage
+                  </CFormLabel>
+
+                  <CFormInput
                     name="acquisitionStage"
                     value={formData.acquisitionStage}
                     onChange={handleChange}
-                  >
-                    <option value="">Select Stage</option>
-                    <option value="Notification">Notification</option>
-                    <option value="Survey">Survey</option>
-                    <option value="Compensation">Compensation</option>
-                    <option value="Possession">Possession</option>
-                    <option value="Completed">Completed</option>
-                  </CFormSelect>
+                    required
+                  />
                 </CCol>
 
+                {/* Objections */}
+
                 <CCol md={6} className="mt-3">
-                  <CFormLabel>Number of Objections</CFormLabel>
+                  <CFormLabel>
+                    Number of Objections
+                  </CFormLabel>
+
                   <CFormInput
                     type="number"
+                    min="0"
                     name="objections"
                     value={formData.objections}
                     onChange={handleChange}
+                    required
                   />
                 </CCol>
 
+                {/* Court Cases */}
+
                 <CCol md={6} className="mt-3">
-                  <CFormLabel>Number of Court Cases</CFormLabel>
+                  <CFormLabel>
+                    Number of Court Cases
+                  </CFormLabel>
+
                   <CFormInput
                     type="number"
+                    min="0"
                     name="courtCases"
                     value={formData.courtCases}
                     onChange={handleChange}
+                    required
                   />
                 </CCol>
 
+                {/* Compensation */}
+
                 <CCol md={6} className="mt-3">
-                  <CFormLabel>Compensation Completed (%)</CFormLabel>
+                  <CFormLabel>
+                    Compensation Completed (%)
+                  </CFormLabel>
+
                   <CFormInput
                     type="number"
+                    min="0"
+                    max="100"
                     name="compensation"
                     value={formData.compensation}
                     onChange={handleChange}
+                    required
                   />
                 </CCol>
 
+                {/* Pending Approvals */}
+
                 <CCol md={6} className="mt-3">
-                  <CFormLabel>Pending Approvals</CFormLabel>
+                  <CFormLabel>
+                    Pending Approvals
+                  </CFormLabel>
+
                   <CFormInput
                     type="number"
+                    min="0"
                     name="pendingApprovals"
                     value={formData.pendingApprovals}
                     onChange={handleChange}
+                    required
                   />
                 </CCol>
 
+                {/* Days in Current Stage */}
+
                 <CCol md={6} className="mt-3">
-                  <CFormLabel>Days in Current Stage</CFormLabel>
+                  <CFormLabel>
+                    Days in Current Stage
+                  </CFormLabel>
+
                   <CFormInput
                     type="number"
+                    min="0"
                     name="daysInCurrentStage"
                     value={formData.daysInCurrentStage}
                     onChange={handleChange}
+                    required
                   />
                 </CCol>
 
+                {/* Sanction Amount */}
+
+                <CCol md={6} className="mt-3">
+                  <CFormLabel>
+                    Sanction Amount (Lakh)
+                  </CFormLabel>
+
+                  <CFormInput
+                    type="number"
+                    min="0"
+                    name="sanctionAmount"
+                    value={formData.sanctionAmount}
+                    onChange={handleChange}
+                    required
+                  />
+                </CCol>
+
+                {/* Agency */}
+
+                <CCol md={6} className="mt-3">
+                  <CFormLabel>
+                    Land Acquisition Agency
+                  </CFormLabel>
+
+                  <CFormSelect
+                    name="landAcquisitionAgency"
+                    value={formData.landAcquisitionAgency}
+                    onChange={handleChange}
+                    required
+                  >
+                    <option value="">
+                      Select Agency
+                    </option>
+
+                    <option value="NHAI">
+                      NHAI
+                    </option>
+
+                    <option value="State PWD">
+                      State PWD
+                    </option>
+
+                    <option value="District Administration">
+                      District Administration
+                    </option>
+
+                    <option value="Special LA Unit">
+                      Special LA Unit
+                    </option>
+                  </CFormSelect>
+                </CCol>
+
+                {/* Environmental Clearance */}
+
+                <CCol md={6} className="mt-3">
+                  <CFormLabel>
+                    Environmental Clearance
+                  </CFormLabel>
+
+                  <CFormSelect
+                    name="environmentalClearance"
+                    value={formData.environmentalClearance}
+                    onChange={handleChange}
+                    required
+                  >
+                    <option value="">
+                      Select Status
+                    </option>
+
+                    <option value="Completed">
+                      Completed
+                    </option>
+
+                    <option value="Pending">
+                      Pending
+                    </option>
+
+                    <option value="Not Required">
+                      Not Required
+                    </option>
+                  </CFormSelect>
+                </CCol>
+
+                {/* Forest Clearance */}
+
+                <CCol md={6} className="mt-3">
+                  <CFormLabel>
+                    Forest Clearance
+                  </CFormLabel>
+
+                  <CFormSelect
+                    name="forestClearance"
+                    value={formData.forestClearance}
+                    onChange={handleChange}
+                    required
+                  >
+                    <option value="">
+                      Select Status
+                    </option>
+
+                    <option value="Completed">
+                      Completed
+                    </option>
+
+                    <option value="Pending">
+                      Pending
+                    </option>
+
+                    <option value="Not Required">
+                      Not Required
+                    </option>
+                  </CFormSelect>
+                </CCol>
+
+                {/* Relocation */}
+
+                <CCol md={6} className="mt-3">
+                  <CFormLabel>
+                    Relocation Required
+                  </CFormLabel>
+
+                  <CFormSelect
+                    name="relocationRequired"
+                    value={formData.relocationRequired}
+                    onChange={handleChange}
+                    required
+                  >
+                    <option value="">
+                      Select
+                    </option>
+
+                    <option value="Yes">
+                      Yes
+                    </option>
+
+                    <option value="No">
+                      No
+                    </option>
+                  </CFormSelect>
+                </CCol>
+
+                {/* Structures */}
+
+                <CCol md={6} className="mt-3">
+                  <CFormLabel>
+                    Structures Affected
+                  </CFormLabel>
+
+                  <CFormInput
+                    type="number"
+                    min="0"
+                    name="structuresAffected"
+                    value={formData.structuresAffected}
+                    onChange={handleChange}
+                    required
+                  />
+                </CCol>
+
+                {/* Dispute Severity */}
+
+                <CCol md={6} className="mt-3">
+                  <CFormLabel>
+                    Dispute Severity
+                  </CFormLabel>
+
+                  <CFormSelect
+                    name="disputeSeverity"
+                    value={formData.disputeSeverity}
+                    onChange={handleChange}
+                    required
+                  >
+                    <option value="">
+                      Select Severity
+                    </option>
+
+                    <option value="Low">
+                      Low
+                    </option>
+
+                    <option value="Medium">
+                      Medium
+                    </option>
+
+                    <option value="High">
+                      High
+                    </option>
+                  </CFormSelect>
+                </CCol>
+
+                {/* Payment Status */}
+
+                <CCol md={6} className="mt-3">
+                  <CFormLabel>
+                    Payment Status
+                  </CFormLabel>
+
+                  <CFormSelect
+                    name="paymentStatus"
+                    value={formData.paymentStatus}
+                    onChange={handleChange}
+                    required
+                  >
+                    <option value="">
+                      Select Status
+                    </option>
+
+                    <option value="Partial">
+                      Partial
+                    </option>
+
+                    <option value="Pending">
+                      Pending
+                    </option>
+
+                    <option value="Complete">
+                      Complete
+                    </option>
+                  </CFormSelect>
+                </CCol>
+
+                {/* Document Verification */}
+
+                <CCol md={6} className="mt-3">
+                  <CFormLabel>
+                    Document Verification Status
+                  </CFormLabel>
+
+                  <CFormSelect
+                    name="documentVerificationStatus"
+                    value={formData.documentVerificationStatus}
+                    onChange={handleChange}
+                    required
+                  >
+                    <option value="">
+                      Select Status
+                    </option>
+
+                    <option value="Partial">
+                      Partial
+                    </option>
+
+                    <option value="Pending">
+                      Pending
+                    </option>
+
+                    <option value="Complete">
+                      Complete
+                    </option>
+                  </CFormSelect>
+                </CCol>
+
+                {/* Project Length */}
+
+                <CCol md={6} className="mt-3">
+                  <CFormLabel>
+                    Project Length (KM)
+                  </CFormLabel>
+
+                  <CFormInput
+                    type="number"
+                    min="0"
+                    name="projectLength"
+                    value={formData.projectLength}
+                    onChange={handleChange}
+                    required
+                  />
+                </CCol>
+
+                {/* Last Review */}
+
+                <CCol md={6} className="mt-3">
+                  <CFormLabel>
+                    Last Review (Days Ago)
+                  </CFormLabel>
+
+                  <CFormInput
+                    type="number"
+                    min="0"
+                    name="lastReviewDaysAgo"
+                    value={formData.lastReviewDaysAgo}
+                    onChange={handleChange}
+                    required
+                  />
+                </CCol>
+
+                {/* Buttons */}
+
                 <CCol xs={12} className="mt-4">
-                  <CButton color="primary" type="submit" className="me-2">
-                    💾 Update Case & Prediction
+
+                  <CButton
+                    color="primary"
+                    type="submit"
+                    className="me-2"
+                    disabled={saving}
+                  >
+                    {saving
+                      ? '⏳ Updating...'
+                      : '💾 Update Case & Prediction'}
                   </CButton>
 
-                  <CButton color="secondary" onClick={() => navigate('/')}>
+                  <CButton
+                    color="secondary"
+                    type="button"
+                    onClick={() => navigate('/dashboard')}
+                  >
                     Cancel
                   </CButton>
+
                 </CCol>
+
               </CRow>
+
             </CForm>
+
           </CCardBody>
+
         </CCard>
+
       </CCol>
     </CRow>
   )

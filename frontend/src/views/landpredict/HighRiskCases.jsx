@@ -1,15 +1,14 @@
-import React from 'react'
-import { useSelector } from 'react-redux'
-import { useNavigate } from 'react-router-dom'
-
+import React, { useEffect, useState } from 'react'
 import {
-  CButton,
+  CAlert,
+  CBadge,
   CCard,
   CCardBody,
   CCardHeader,
   CCol,
-  CProgress,
+  CContainer,
   CRow,
+  CSpinner,
   CTable,
   CTableBody,
   CTableDataCell,
@@ -18,111 +17,298 @@ import {
   CTableRow,
 } from '@coreui/react'
 
+import { useNavigate } from 'react-router-dom'
+import { apiFetch } from '../../api'
+
 const HighRiskCases = () => {
   const navigate = useNavigate()
 
-  // Get all cases from Redux
-  const cases = useSelector((state) => state.cases)
+  const [cases, setCases] = useState([])
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState('')
 
-  // Get only High Risk cases
-  const highRiskCases = cases
-    .map((item, index) => ({
-      ...item,
-      originalIndex: index,
-    }))
-    .filter((item) => item.risk === 'High')
+  // =========================================================
+  // LOAD HIGH-RISK CASES
+  // =========================================================
+  const loadHighRiskCases = async () => {
+    setLoading(true)
+    setError('')
+
+    try {
+      const response = await apiFetch('/api/cases/')
+      const data = await response.json()
+
+      if (!response.ok) {
+        throw new Error(data.detail || 'Failed to load cases')
+      }
+
+      const highRiskCases = data
+        .filter(
+          (item) =>
+            Number(item.predicted_delay_days) >= 120,
+        )
+        .sort(
+          (a, b) =>
+            Number(b.predicted_delay_days) -
+            Number(a.predicted_delay_days),
+        )
+
+      setCases(highRiskCases)
+    } catch (err) {
+      setError(err.message || 'Unable to load high-risk cases')
+      setCases([])
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  // =========================================================
+  // LOAD ON PAGE OPEN
+  // =========================================================
+  useEffect(() => {
+    loadHighRiskCases()
+  }, [])
+
+  // =========================================================
+  // OPEN CASE
+  // =========================================================
+  const handleViewCase = (caseId) => {
+    navigate(`/view-case/${encodeURIComponent(caseId)}`)
+  }
 
   return (
-    <CRow>
-      <CCol xs={12}>
-        <CCard className="shadow-sm">
-          <CCardHeader className="d-flex justify-content-between align-items-center">
-            <div>
-              <strong>🔴 High Risk Cases</strong>
+    <CContainer fluid>
+
+      {/* Breadcrumb */}
+      <div className="mb-3">
+        <span className="text-body-secondary">
+          Home
+        </span>
+
+        <span className="mx-2">
+          /
+        </span>
+
+        <strong>
+          High Risk Cases
+        </strong>
+      </div>
+
+      {/* Error */}
+      {error && (
+        <CAlert
+          color="danger"
+          dismissible
+          onClose={() => setError('')}
+        >
+          {error}
+        </CAlert>
+      )}
+
+      <CRow>
+
+        <CCol xs={12}>
+
+          <CCard className="mb-4">
+
+            <CCardHeader>
+              <strong>
+                🔴 High Delay Cases
+              </strong>
+
               <div className="small text-body-secondary mt-1">
-                Cases that require immediate attention
+                Cases with predicted delay of 120 days or more
               </div>
-            </div>
+            </CCardHeader>
 
-            <span className="badge bg-danger fs-6">{highRiskCases.length} Cases</span>
-          </CCardHeader>
+            <CCardBody>
 
-          <CCardBody>
-            {highRiskCases.length === 0 ? (
-              <div className="text-center py-5">
-                <h5>🎉 No High Risk Cases Found</h5>
+              {/* Loading */}
+              {loading ? (
 
-                <p className="text-body-secondary">
-                  Currently, there are no land acquisition cases with high delay risk.
-                </p>
+                <div className="text-center py-5">
 
-                <CButton color="primary" onClick={() => navigate('/add-case')}>
-                  ➕ Add New Case
-                </CButton>
-              </div>
-            ) : (
-              <CTable responsive hover align="middle">
-                <CTableHead>
-                  <CTableRow>
-                    <CTableHeaderCell>Case ID</CTableHeaderCell>
-                    <CTableHeaderCell>State</CTableHeaderCell>
-                    <CTableHeaderCell>District</CTableHeaderCell>
-                    <CTableHeaderCell>Project Type</CTableHeaderCell>
-                    <CTableHeaderCell>Risk Score</CTableHeaderCell>
-                    <CTableHeaderCell>Expected Delay</CTableHeaderCell>
-                    <CTableHeaderCell className="text-center">Actions</CTableHeaderCell>
-                  </CTableRow>
-                </CTableHead>
+                  <CSpinner />
 
-                <CTableBody>
-                  {highRiskCases.map((item) => (
-                    <CTableRow key={`${item.caseId}-${item.originalIndex}`}>
-                      <CTableDataCell>
-                        <strong>{item.caseId}</strong>
-                      </CTableDataCell>
+                  <div className="mt-3 text-body-secondary">
+                    Loading high-risk cases...
+                  </div>
 
-                      <CTableDataCell>{item.state}</CTableDataCell>
+                </div>
 
-                      <CTableDataCell>{item.district}</CTableDataCell>
+              ) : (
 
-                      <CTableDataCell>{item.projectType}</CTableDataCell>
+                <>
 
-                      <CTableDataCell style={{ minWidth: '120px' }}>
-                        <CProgress color="danger" value={item.score} />
+                  {/* Count */}
+                  <div className="mb-3">
 
-                        <small className="text-danger fw-semibold">{item.score}%</small>
-                      </CTableDataCell>
+                    <CBadge
+                      color="danger"
+                      shape="rounded-pill"
+                      className="px-3 py-2"
+                    >
+                      {cases.length} Cases
+                    </CBadge>
 
-                      <CTableDataCell>{item.delay}</CTableDataCell>
+                  </div>
 
-                      <CTableDataCell className="text-center">
-                        <div className="d-flex gap-2 justify-content-center">
-                          <CButton
-                            color="info"
-                            size="sm"
-                            onClick={() => navigate(`/view-case/${item.originalIndex}`)}
-                          >
-                            👁️ View
-                          </CButton>
+                  {/* No cases */}
+                  {cases.length === 0 ? (
 
-                          <CButton
-                            color="primary"
-                            size="sm"
-                            onClick={() => navigate(`/edit-case/${item.originalIndex}`)}
-                          >
-                            ✏️ Edit
-                          </CButton>
-                        </div>
-                      </CTableDataCell>
-                    </CTableRow>
-                  ))}
-                </CTableBody>
-              </CTable>
-            )}
-          </CCardBody>
-        </CCard>
-      </CCol>
-    </CRow>
+                    <div className="text-center py-5">
+
+                      <div
+                        style={{
+                          fontSize: '42px',
+                          marginBottom: '10px',
+                        }}
+                      >
+                        🎉
+                      </div>
+
+                      <h5>
+                        No High Delay Cases Found
+                      </h5>
+
+                      <p className="text-body-secondary mb-0">
+                        No cases currently have a predicted
+                        delay of 120 days or more.
+                      </p>
+
+                    </div>
+
+                  ) : (
+
+                    <CTable
+                      hover
+                      responsive
+                      bordered
+                      align="middle"
+                    >
+
+                      <CTableHead>
+
+                        <CTableRow>
+
+                          <CTableHeaderCell>
+                            Case ID
+                          </CTableHeaderCell>
+
+                          <CTableHeaderCell>
+                            State
+                          </CTableHeaderCell>
+
+                          <CTableHeaderCell>
+                            District
+                          </CTableHeaderCell>
+
+                          <CTableHeaderCell>
+                            Project Type
+                          </CTableHeaderCell>
+
+                          <CTableHeaderCell>
+                            Predicted Delay
+                          </CTableHeaderCell>
+
+                          <CTableHeaderCell>
+                            Status
+                          </CTableHeaderCell>
+
+                          <CTableHeaderCell>
+                            Action
+                          </CTableHeaderCell>
+
+                        </CTableRow>
+
+                      </CTableHead>
+
+                      <CTableBody>
+
+                        {cases.map((item) => {
+
+                          const delay = Number(
+                            item.predicted_delay_days,
+                          )
+
+                          return (
+
+                            <CTableRow key={item.case_id}>
+
+                              <CTableDataCell>
+                                <strong>
+                                  {item.case_id}
+                                </strong>
+                              </CTableDataCell>
+
+                              <CTableDataCell>
+                                {item.state || '—'}
+                              </CTableDataCell>
+
+                              <CTableDataCell>
+                                {item.district || '—'}
+                              </CTableDataCell>
+
+                              <CTableDataCell>
+                                {item.project_type || '—'}
+                              </CTableDataCell>
+
+                              <CTableDataCell>
+
+                                <CBadge color="danger">
+                                  {delay.toFixed(2)} days
+                                </CBadge>
+
+                              </CTableDataCell>
+
+                              <CTableDataCell>
+
+                                <CBadge color="danger">
+                                  High Delay
+                                </CBadge>
+
+                              </CTableDataCell>
+
+                              <CTableDataCell>
+
+                                <button
+                                  type="button"
+                                  className="btn btn-sm btn-primary"
+                                  onClick={() =>
+                                    handleViewCase(
+                                      item.case_id,
+                                    )
+                                  }
+                                >
+                                  View Case
+                                </button>
+
+                              </CTableDataCell>
+
+                            </CTableRow>
+
+                          )
+                        })}
+
+                      </CTableBody>
+
+                    </CTable>
+
+                  )}
+
+                </>
+
+              )}
+
+            </CCardBody>
+
+          </CCard>
+
+        </CCol>
+
+      </CRow>
+
+    </CContainer>
   )
 }
 

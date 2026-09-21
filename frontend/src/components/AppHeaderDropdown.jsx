@@ -1,22 +1,18 @@
 import React from 'react'
 import { useNavigate } from 'react-router-dom'
-
 import {
   CAvatar,
   CBadge,
   CDropdown,
   CDropdownDivider,
-  CDropdownHeader,
   CDropdownItem,
   CDropdownMenu,
   CDropdownToggle,
 } from '@coreui/react'
-
 import CIcon from '@coreui/icons-react'
-
 import {
+  cilAccountLogout,
   cilBell,
-  cilCreditCard,
   cilLockLocked,
   cilSettings,
   cilUser,
@@ -25,23 +21,20 @@ import {
 const AppHeaderDropdown = ({ alerts = [], onAlertClick }) => {
   const navigate = useNavigate()
 
-  const storedUser = localStorage.getItem('user')
-  const sessionUser = sessionStorage.getItem('user')
+  const storedUser =
+    localStorage.getItem('user') ||
+    sessionStorage.getItem('user')
 
   let user = null
 
   try {
-    user = storedUser
-      ? JSON.parse(storedUser)
-      : sessionUser
-        ? JSON.parse(sessionUser)
-        : null
+    user = storedUser ? JSON.parse(storedUser) : null
   } catch {
     user = null
   }
 
-  const userName = user?.name || 'User'
-  const userEmail = user?.email || ''
+  const name = user?.name || 'User'
+  const email = user?.email || ''
 
   const handleLogout = () => {
     localStorage.removeItem('access_token')
@@ -55,27 +48,33 @@ const AppHeaderDropdown = ({ alerts = [], onAlertClick }) => {
 
   return (
     <CDropdown variant="nav-item" placement="bottom-end">
-      <CDropdownToggle caret={false} className="py-0 pe-0">
+      <CDropdownToggle
+        placement="bottom-end"
+        className="py-0 pe-0"
+        caret={false}
+      >
         <CAvatar color="primary" textColor="white" size="md">
-          {userName.charAt(0).toUpperCase()}
+          {name.charAt(0).toUpperCase()}
         </CAvatar>
       </CDropdownToggle>
 
       <CDropdownMenu className="pt-0">
+        <CDropdownItem
+          className="bg-body-secondary fw-semibold py-2"
+          disabled
+        >
+          <div>{name}</div>
 
-        {/* User Information */}
-        <CDropdownHeader className="bg-body-secondary fw-semibold py-2">
-          <div>{userName}</div>
-
-          {userEmail && (
+          {email && (
             <small className="text-body-secondary">
-              {userEmail}
+              {email}
             </small>
           )}
-        </CDropdownHeader>
+        </CDropdownItem>
 
-        {/* Notifications */}
-        <CDropdownHeader className="fw-semibold">
+        <CDropdownItem disabled>
+          <CIcon icon={cilBell} className="me-2" />
+
           Updates
 
           <CBadge
@@ -84,11 +83,10 @@ const AppHeaderDropdown = ({ alerts = [], onAlertClick }) => {
           >
             {alerts.length}
           </CBadge>
-        </CDropdownHeader>
+        </CDropdownItem>
 
         {alerts.length === 0 ? (
           <CDropdownItem disabled>
-            <CIcon icon={cilBell} className="me-2" />
             No new updates
           </CDropdownItem>
         ) : (
@@ -112,9 +110,7 @@ const AppHeaderDropdown = ({ alerts = [], onAlertClick }) => {
 
               <span>
                 <strong>{alert.title}</strong>
-
                 <br />
-
                 <small className="text-body-secondary">
                   {alert.message}
                 </small>
@@ -129,7 +125,6 @@ const AppHeaderDropdown = ({ alerts = [], onAlertClick }) => {
 
             <CDropdownItem
               onClick={() => navigate('/high-risk-cases')}
-              style={{ cursor: 'pointer' }}
             >
               <CIcon icon={cilBell} className="me-2" />
               View all updates
@@ -137,7 +132,6 @@ const AppHeaderDropdown = ({ alerts = [], onAlertClick }) => {
           </>
         )}
 
-        {/* Account Options */}
         <CDropdownDivider />
 
         <CDropdownItem>
@@ -151,18 +145,12 @@ const AppHeaderDropdown = ({ alerts = [], onAlertClick }) => {
         </CDropdownItem>
 
         <CDropdownItem>
-          <CIcon icon={cilCreditCard} className="me-2" />
-          Payments
-        </CDropdownItem>
-
-        <CDropdownDivider />
-
-        <CDropdownItem>
           <CIcon icon={cilLockLocked} className="me-2" />
           Lock Account
         </CDropdownItem>
 
-        {/* Logout */}
+        <CDropdownDivider />
+
         <CDropdownItem
           component="button"
           onClick={handleLogout}
@@ -171,9 +159,9 @@ const AppHeaderDropdown = ({ alerts = [], onAlertClick }) => {
             textAlign: 'left',
           }}
         >
+          <CIcon icon={cilAccountLogout} className="me-2" />
           Logout
         </CDropdownItem>
-
       </CDropdownMenu>
     </CDropdown>
   )

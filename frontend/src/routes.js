@@ -13,6 +13,7 @@ import React from 'react'
 // Dashboard
 // =========================
 const Dashboard = React.lazy(() => import('./views/dashboard/Dashboard'))
+const ModelInsights = React.lazy(() => import('./views/model-insights/ModelInsights'))
 
 // =========================
 // LANDPREDICT
@@ -40,7 +41,6 @@ const Chip = React.lazy(() => import('./views/components/chip/Chip'))
 const ChipSet = React.lazy(() => import('./views/components/chip-set/ChipSet'))
 const Collapses = React.lazy(() => import('./views/components/collapse/Collapse'))
 const Dropdowns = React.lazy(() => import('./views/components/dropdowns/Dropdowns'))
-const ListGroups = React.lazy(() => import('./views/components/list-group/ListGroup'))
 const Modals = React.lazy(() => import('./views/components/modals/Modals'))
 const Navs = React.lazy(() => import('./views/components/navs-tabs/NavsTabs'))
 const Paginations = React.lazy(() => import('./views/components/pagination/Pagination'))
@@ -105,6 +105,11 @@ export const routes = [
     name: 'Dashboard',
     element: Dashboard,
   },
+  {
+    path: '/model-insights',
+    name: 'Model Insights',
+    element: ModelInsights,
+  },
 
   // =========================
   // LANDPREDICT ROUTES
@@ -135,14 +140,28 @@ export const routes = [
     element: GISMap,
   },
   {
-    path: '/view-case/:index',
+    path: '/view-case/:caseId',
     name: 'View Case',
     element: ViewCase,
   },
   {
-    path: '/edit-case/:index',
+    path: '/edit-case/:caseId',
     name: 'Edit Case',
     element: EditCase,
+  },
+
+  // =========================
+  // ALERTS
+  // =========================
+  {
+    path: '/alerts',
+    name: 'Alerts',
+    element: Alerts,
+  },
+  {
+    path: '/components/alerts',
+    name: 'Alerts Component',
+    element: Alerts,
   },
 
   // =========================
@@ -158,11 +177,6 @@ export const routes = [
     path: '/components/accordion',
     name: 'Accordion',
     element: Accordion,
-  },
-  {
-    path: '/components/alerts',
-    name: 'Alerts',
-    element: Alerts,
   },
   {
     path: '/components/badge',
@@ -213,11 +227,6 @@ export const routes = [
     path: '/components/dropdowns',
     name: 'Dropdowns',
     element: Dropdowns,
-  },
-  {
-    path: '/components/list-group',
-    name: 'List Group',
-    element: ListGroups,
   },
   {
     path: '/components/modals',
